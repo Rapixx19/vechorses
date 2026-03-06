@@ -1,35 +1,35 @@
 /**
  * FILE: modules/horses/components/HorseDetail.tsx
  * ZONE: Green
- * PURPOSE: Full horse profile with tasks and notes
+ * PURPOSE: Full horse profile with tabbed interface
  * EXPORTS: HorseDetail
- * DEPENDS ON: useHorses, useTasks, useClients, useStalls
+ * DEPENDS ON: useHorses, useTasks, useClients, useStalls, HorseOverviewTab, HorsePhotos, DocumentList, DocumentUpload
  * CONSUMED BY: app/horses/[id]/page.tsx
  * TESTS: modules/horses/tests/HorseDetail.test.tsx
- * LAST CHANGED: 2026-03-05 — Initial creation
+ * LAST CHANGED: 2026-03-06 — Added tabs for Overview, Photos, Documents
  */
 
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { Pencil } from "lucide-react"
 import { useHorses, useTasks } from "@/modules/horses"
 import { useClients } from "@/modules/clients"
 import { useStalls } from "@/modules/stalls"
+import { HorseOverviewTab } from "./HorseOverviewTab"
+import { HorsePhotos } from "./HorsePhotos"
+import { DocumentList } from "./DocumentList"
+import { DocumentUpload } from "./DocumentUpload"
 
 interface HorseDetailProps {
   horseId: string
 }
 
-const typeColors: Record<string, string> = {
-  feeding: "bg-amber-600",
-  medication: "bg-blue-600",
-  farrier: "bg-purple-600",
-  vet: "bg-red-600",
-  other: "bg-gray-600",
-}
+type Tab = "overview" | "photos" | "documents"
 
 export function HorseDetail({ horseId }: HorseDetailProps) {
+  const [activeTab, setActiveTab] = useState<Tab>("overview")
   const horses = useHorses()
   const clients = useClients()
   const stalls = useStalls()
@@ -41,8 +41,11 @@ export function HorseDetail({ horseId }: HorseDetailProps) {
   const owner = clients.find((c) => c.id === horse.ownerId)
   const stall = stalls.find((s) => s.id === horse.stallId)
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "overview", label: "Overview" },
+    { id: "photos", label: "Photos" },
+    { id: "documents", label: "Documents" },
+  ]
 
   return (
     <div className="space-y-6">
@@ -61,66 +64,38 @@ export function HorseDetail({ horseId }: HorseDetailProps) {
         </Link>
       </div>
 
-      {/* Info Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <InfoCard label="Date of Birth" value={formatDate(horse.dateOfBirth)} />
-        <InfoCard label="Stall" value={stall?.label ?? "No stall assigned"} />
-        <InfoCard
-          label="Owner"
-          value={owner?.fullName ?? "Unknown"}
-          href={owner ? `/clients/${owner.id}` : undefined}
-        />
-        <InfoCard label="Status" value={horse.isActive ? "Active" : "Inactive"} />
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-[var(--border)]">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
+              activeTab === tab.id
+                ? "border-[#2C5F2E] text-[#2C5F2E]"
+                : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Notes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <NotesCard title="Feeding Notes" content={horse.feedingNotes} />
-        <NotesCard title="Medical Notes" content={horse.medicalNotes} />
-      </div>
-
-      {/* Tasks */}
-      <div className="rounded-lg p-4" style={{ backgroundColor: "#1A1A2E" }}>
-        <h3 className="font-semibold text-[var(--text-primary)] mb-3">Tasks ({tasks.length})</h3>
-        {tasks.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">No tasks for this horse</p>
-        ) : (
-          <ul className="space-y-2">
-            {tasks.slice(0, 10).map((task) => (
-              <li key={task.id} className="flex items-center gap-3 text-sm">
-                <span className={`text-xs px-2 py-0.5 rounded ${typeColors[task.type]}`}>{task.type}</span>
-                <span className="text-[var(--text-primary)] flex-1">{task.title}</span>
-                <span className="text-[var(--text-muted)]">{task.dueDate}</span>
-                <span className={task.completedAt ? "text-green-500" : "text-amber-500"}>
-                  {task.completedAt ? "Done" : "Pending"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function InfoCard({ label, value, href }: { label: string; value: string; href?: string }) {
-  return (
-    <div className="rounded-lg p-4" style={{ backgroundColor: "#1A1A2E" }}>
-      <p className="text-xs text-[var(--text-muted)] mb-1">{label}</p>
-      {href ? (
-        <Link href={href} className="text-[#2C5F2E] hover:underline">{value}</Link>
-      ) : (
-        <p className="text-[var(--text-primary)]">{value}</p>
+      {/* Tab Content */}
+      {activeTab === "overview" && (
+        <HorseOverviewTab horse={horse} owner={owner} stall={stall} tasks={tasks} />
       )}
-    </div>
-  )
-}
 
-function NotesCard({ title, content }: { title: string; content: string }) {
-  return (
-    <div className="rounded-lg p-4" style={{ backgroundColor: "#1A1A2E" }}>
-      <h4 className="text-sm font-medium text-[var(--text-primary)] mb-2">{title}</h4>
-      <p className="text-sm text-[var(--text-muted)]">{content || "No notes"}</p>
+      {activeTab === "photos" && (
+        <HorsePhotos horseId={horseId} horseName={horse.name} />
+      )}
+
+      {activeTab === "documents" && (
+        <div className="space-y-4">
+          <DocumentUpload />
+          <DocumentList horseId={horseId} />
+        </div>
+      )}
     </div>
   )
 }

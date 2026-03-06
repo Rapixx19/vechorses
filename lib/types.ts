@@ -2,11 +2,11 @@
  * FILE: lib/types.ts
  * ZONE: Yellow
  * PURPOSE: Core domain types for the VecHorses platform
- * EXPORTS: Horse, Client, Stall, Task, BillingLineItem
+ * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType
  * DEPENDS ON: None
  * CONSUMED BY: All modules, mock-data.ts
  * TESTS: lib/types.test.ts
- * LAST CHANGED: 2026-03-05 — Initial creation with V1 types
+ * LAST CHANGED: 2026-03-06 — Added HorseDocument type and photoUrls to Horse
  */
 
 // BREADCRUMB: These types define the domain model. V2 will add Supabase row types.
@@ -22,8 +22,22 @@ export interface Horse {
   medicalNotes: string
   feedingNotes: string
   photoUrl: string | null
+  photoUrls: string[]
   isActive: boolean
   createdAt: string
+}
+
+export type DocumentType = "vaccination" | "passport" | "insurance" | "vet_report" | "other"
+
+export interface HorseDocument {
+  id: string
+  horseId: string
+  name: string
+  type: DocumentType
+  fileUrl: string
+  fileSize: string
+  uploadedAt: string
+  notes?: string
 }
 
 export interface Client {

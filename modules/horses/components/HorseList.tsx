@@ -3,10 +3,10 @@
  * ZONE: Green
  * PURPOSE: Searchable list of all horses with add button
  * EXPORTS: HorseList
- * DEPENDS ON: useHorses, useClients, useStalls, HorseCard
+ * DEPENDS ON: useHorses, useTasks, useClients, useStalls, HorseCard
  * CONSUMED BY: app/horses/page.tsx
  * TESTS: modules/horses/tests/HorseList.test.tsx
- * LAST CHANGED: 2026-03-05 — Initial creation
+ * LAST CHANGED: 2026-03-06 — Added pending task count to cards
  */
 
 "use client"
@@ -14,7 +14,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Plus, Search } from "lucide-react"
-import { useHorses } from "@/modules/horses"
+import { useHorses, useTasks } from "@/modules/horses"
 import { useClients } from "@/modules/clients"
 import { useStalls } from "@/modules/stalls"
 import { HorseCard } from "./HorseCard"
@@ -24,12 +24,17 @@ export function HorseList() {
   const horses = useHorses()
   const clients = useClients()
   const stalls = useStalls()
+  const allTasks = useTasks()
 
   const getOwnerName = (ownerId: string) =>
     clients.find((c) => c.id === ownerId)?.fullName ?? "Unknown"
 
   const getStallLabel = (stallId: string | null) =>
     stalls.find((s) => s.id === stallId)?.label ?? "No stall"
+
+  // BREADCRUMB: Count pending tasks for each horse
+  const getPendingTaskCount = (horseId: string) =>
+    allTasks.filter((t) => t.horseId === horseId && !t.completedAt).length
 
   const filteredHorses = horses.filter(
     (horse) =>
@@ -72,6 +77,7 @@ export function HorseList() {
             horse={horse}
             ownerName={getOwnerName(horse.ownerId)}
             stallLabel={getStallLabel(horse.stallId)}
+            pendingTaskCount={getPendingTaskCount(horse.id)}
           />
         ))}
       </div>
