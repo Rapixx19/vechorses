@@ -20,6 +20,7 @@ interface AuthLayoutProps {
 }
 
 // BREADCRUMB: Wraps app in AuthProvider, hides AppShell on login page
+// V2: Add real auth protection here (redirect unauthenticated users to /login)
 export function AuthLayout({ children }: AuthLayoutProps) {
   const pathname = usePathname()
   const isLoginPage = pathname === "/login"
