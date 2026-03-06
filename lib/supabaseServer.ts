@@ -2,30 +2,36 @@
  * FILE: lib/supabaseServer.ts
  * ZONE: 🔴 Red — critical infrastructure
  * PURPOSE: Supabase server client for Server Components and API routes
- * EXPORTS: createServerClient
+ * EXPORTS: createServerSupabaseClient
  * DEPENDS ON: .env.local, @supabase/ssr, next/headers
  * CONSUMED BY: All V2 server-side data fetching
  * TESTS: lib/supabaseServer.test.ts
- * LAST CHANGED: 2026-03-06 — Initial creation for V2 backend
+ * LAST CHANGED: 2026-03-06 — V2 real Supabase auth
  */
 
-import { createServerClient as createSupabaseServerClient } from "@supabase/ssr"
+import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-// BREADCRUMB: Fallback to placeholder values during static prerender
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co"
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-key"
-
-// BREADCRUMB: Creates a server client with cookie handling for auth
-export async function createServerClient() {
+export const createServerSupabaseClient = async () => {
   const cookieStore = await cookies()
-
-  return createSupabaseServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll: () => cookieStore.getAll(),
-      setAll: (cookiesToSet) => {
-        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // Called from Server Component — ignore
+          }
+        },
       },
-    },
-  })
+    }
+  )
 }

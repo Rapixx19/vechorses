@@ -19,15 +19,17 @@ interface AuthLayoutProps {
   children: React.ReactNode
 }
 
-// BREADCRUMB: Wraps app in AuthProvider, hides AppShell on login page
-// V2: Add real auth protection here (redirect unauthenticated users to /login)
+// BREADCRUMB: Wraps app in AuthProvider, hides AppShell on auth pages
+// Auth protection handled by middleware.ts (redirects unauthenticated to /login)
+const AUTH_PAGES = ["/login", "/register", "/join"]
+
 export function AuthLayout({ children }: AuthLayoutProps) {
   const pathname = usePathname()
-  const isLoginPage = pathname === "/login"
+  const isAuthPage = AUTH_PAGES.some((page) => pathname.startsWith(page))
 
   return (
     <AuthProvider>
-      {isLoginPage ? children : <AppShell>{children}</AppShell>}
+      {isAuthPage ? children : <AppShell>{children}</AppShell>}
     </AuthProvider>
   )
 }
