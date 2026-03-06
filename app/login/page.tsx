@@ -27,8 +27,11 @@ export default function LoginPage() {
     setError("")
     try {
       await login(email, password)
-    } catch {
-      setError("Invalid credentials")
+    } catch (err) {
+      // Show actual error message for debugging
+      const message = err instanceof Error ? err.message : "Login failed"
+      console.error("Login error:", message)
+      setError(message)
     }
   }
 

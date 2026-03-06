@@ -76,8 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
+      console.log("Attempting login with:", email)
+      console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
       setIsLoading(true)
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      console.log("Login result:", { data, error })
       setIsLoading(false)
       if (error) throw new Error(error.message)
       router.push("/dashboard")
