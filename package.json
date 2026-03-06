@@ -8,7 +8,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:changed": "jest --onlyChanged",
-    "test:integration": "jest --testPathPattern=integration",
+    "test:integration": "jest --testPathPatterns=integration",
     "test:coverage": "jest --coverage",
     "qa": "npm run type-check && npm run lint && npm run test:coverage",
     "pre-push": "./scripts/smart-test.sh",
