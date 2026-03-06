@@ -1,12 +1,12 @@
 /**
  * FILE: modules/dashboard/components/OverdueTasks.tsx
  * ZONE: Green
- * PURPOSE: Display overdue tasks with warning styling
+ * PURPOSE: Display overdue tasks with soft warning styling
  * EXPORTS: OverdueTasks
- * DEPENDS ON: lib/types.ts, modules/horses
+ * DEPENDS ON: lib/types.ts
  * CONSUMED BY: app/dashboard/page.tsx
  * TESTS: modules/dashboard/tests/OverdueTasks.test.tsx
- * LAST CHANGED: 2026-03-05 — Initial creation
+ * LAST CHANGED: 2026-03-06 — Softened red, only days overdue stays red
  */
 
 import type { Task, Horse } from "@/lib/types"
@@ -37,22 +37,28 @@ export function OverdueTasks({ tasks, horses }: OverdueTasksProps) {
 
   if (overdueTasks.length === 0) {
     return (
-      <div className="rounded-lg p-4" style={{ backgroundColor: "#1A1A2E" }}>
-        <h3 className="font-semibold text-[var(--text-primary)] mb-3">Overdue Tasks</h3>
-        <p className="text-sm text-green-500">No overdue tasks!</p>
+      <div className="rounded-md px-4 py-3 border border-[var(--border)]">
+        <h3 className="text-xs font-medium text-[var(--text-muted)] mb-2">Overdue</h3>
+        <p className="text-xs text-green-500/80">No overdue tasks</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg p-4 border border-red-900/50" style={{ backgroundColor: "#1A1A2E" }}>
-      <h3 className="font-semibold text-red-400 mb-3">⚠️ Overdue Tasks ({overdueTasks.length})</h3>
-      <ul className="space-y-2">
+    <div className="rounded-md px-4 py-3 border border-red-900/30">
+      <h3 className="text-xs font-medium text-[var(--text-muted)] mb-2">
+        Overdue ({overdueTasks.length})
+      </h3>
+      <ul className="space-y-1.5">
         {overdueTasks.map((task) => (
-          <li key={task.id} className="text-sm">
-            <span className="text-[var(--text-primary)]">{getHorseName(task.horseId)}</span>
-            <span className="text-[var(--text-muted)]"> — {task.title}</span>
-            <span className="text-red-400 ml-2">({getDaysOverdue(task.dueDate)}d overdue)</span>
+          <li key={task.id} className="flex items-center gap-2 text-xs">
+            <span className="font-medium text-[var(--text-primary)]">
+              {getHorseName(task.horseId)}
+            </span>
+            <span className="text-[var(--text-muted)] flex-1 truncate">{task.title}</span>
+            <span className="text-red-400/80 text-[10px]">
+              {getDaysOverdue(task.dueDate)}d overdue
+            </span>
           </li>
         ))}
       </ul>

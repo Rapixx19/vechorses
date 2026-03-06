@@ -1,12 +1,12 @@
 /**
  * FILE: modules/dashboard/components/StatCard.tsx
  * ZONE: Green
- * PURPOSE: Reusable stat card for dashboard metrics
+ * PURPOSE: Minimal stat card for dashboard metrics
  * EXPORTS: StatCard
  * DEPENDS ON: lucide-react
  * CONSUMED BY: app/dashboard/page.tsx
  * TESTS: modules/dashboard/tests/StatCard.test.tsx
- * LAST CHANGED: 2026-03-05 — Initial creation
+ * LAST CHANGED: 2026-03-06 — Polished to be cleaner and less heavy
  */
 
 import type { LucideIcon } from "lucide-react"
@@ -16,27 +16,23 @@ interface StatCardProps {
   value: string | number
   subtitle?: string
   icon: LucideIcon
-  trend?: { value: number; label: string }
+  children?: React.ReactNode
 }
 
-export function StatCard({ title, value, subtitle, icon: Icon, trend }: StatCardProps) {
+export function StatCard({ title, value, subtitle, icon: Icon, children }: StatCardProps) {
   return (
-    <div className="rounded-lg p-5" style={{ backgroundColor: "#1A1A2E" }}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-[var(--text-muted)]">{title}</span>
-        <Icon className="h-5 w-5 text-[var(--text-muted)]" />
+    <div className="rounded-md px-4 py-3 border border-[var(--border)]">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-[var(--text-muted)]">{title}</span>
+        <Icon className="h-4 w-4 text-[var(--text-muted)] opacity-60" />
       </div>
-      <div className="text-3xl font-bold" style={{ color: "#2C5F2E" }}>
+      <div className="text-xl font-semibold" style={{ color: "#2C5F2E" }}>
         {value}
       </div>
       {subtitle && (
-        <p className="text-sm text-[var(--text-muted)] mt-1">{subtitle}</p>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">{subtitle}</p>
       )}
-      {trend && (
-        <p className={`text-sm mt-1 ${trend.value >= 0 ? "text-green-500" : "text-red-500"}`}>
-          {trend.value >= 0 ? "↑" : "↓"} {Math.abs(trend.value)}% {trend.label}
-        </p>
-      )}
+      {children}
     </div>
   )
 }

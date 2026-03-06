@@ -6,7 +6,7 @@
  * DEPENDS ON: lib/types.ts, react
  * CONSUMED BY: app/dashboard/page.tsx
  * TESTS: modules/dashboard/tests/TaskChecklist.test.tsx
- * LAST CHANGED: 2026-03-05 — Initial creation
+ * LAST CHANGED: 2026-03-06 — Polished with outlined badges, reduced padding
  */
 
 "use client"
@@ -19,21 +19,20 @@ interface TaskChecklistProps {
   horses: Horse[]
 }
 
+// BREADCRUMB: Outlined badge colors for subtle appearance
 const typeColors: Record<string, string> = {
-  feeding: "bg-amber-600",
-  medication: "bg-blue-600",
-  farrier: "bg-purple-600",
-  vet: "bg-red-600",
-  other: "bg-gray-600",
+  feeding: "border-amber-600/60 text-amber-500/80",
+  medication: "border-blue-600/60 text-blue-400/80",
+  farrier: "border-purple-600/60 text-purple-400/80",
+  vet: "border-red-600/60 text-red-400/80",
+  other: "border-gray-500/60 text-gray-400/80",
 }
 
 export function TaskChecklist({ tasks: initialTasks, horses }: TaskChecklistProps) {
   const [tasks, setTasks] = useState(initialTasks)
 
   const today = new Date().toISOString().split("T")[0]
-  const todaysTasks = tasks.filter(
-    (task) => task.dueDate === today && !task.completedAt
-  )
+  const todaysTasks = tasks.filter((task) => task.dueDate === today && !task.completedAt)
 
   const getHorseName = (horseId: string) =>
     horses.find((h) => h.id === horseId)?.name ?? "Unknown"
@@ -41,44 +40,38 @@ export function TaskChecklist({ tasks: initialTasks, horses }: TaskChecklistProp
   const handleCheck = (taskId: string) => {
     setTasks((prev) =>
       prev.map((task) =>
-        task.id === taskId
-          ? { ...task, completedAt: new Date().toISOString() }
-          : task
+        task.id === taskId ? { ...task, completedAt: new Date().toISOString() } : task
       )
     )
   }
 
   if (todaysTasks.length === 0) {
     return (
-      <div className="rounded-lg p-4" style={{ backgroundColor: "#1A1A2E" }}>
-        <h3 className="font-semibold text-[var(--text-primary)] mb-3">Today&apos;s Tasks</h3>
-        <p className="text-sm text-green-500">All caught up!</p>
+      <div className="rounded-md px-4 py-3 border border-[var(--border)]">
+        <h3 className="text-xs font-medium text-[var(--text-muted)] mb-2">Today&apos;s Tasks</h3>
+        <p className="text-xs text-green-500/80">All caught up!</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg p-4" style={{ backgroundColor: "#1A1A2E" }}>
-      <h3 className="font-semibold text-[var(--text-primary)] mb-3">
+    <div className="rounded-md px-4 py-3 border border-[var(--border)]">
+      <h3 className="text-xs font-medium text-[var(--text-muted)] mb-2">
         Today&apos;s Tasks ({todaysTasks.length})
       </h3>
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {todaysTasks.map((task) => (
-          <li key={task.id} className="flex items-center gap-3">
+          <li key={task.id} className="flex items-center gap-2 text-xs">
             <input
               type="checkbox"
               onChange={() => handleCheck(task.id)}
-              className="h-4 w-4 rounded border-gray-600 bg-transparent"
+              className="h-3 w-3 rounded border-gray-600 bg-transparent"
             />
-            <span className="text-sm text-[var(--text-primary)]">
+            <span className="font-medium text-[var(--text-primary)]">
               {getHorseName(task.horseId)}
             </span>
-            <span className="text-sm text-[var(--text-muted)] flex-1 truncate">
-              {task.title}
-            </span>
-            <span
-              className={`text-xs px-2 py-0.5 rounded ${typeColors[task.type]}`}
-            >
+            <span className="text-[var(--text-muted)] flex-1 truncate">{task.title}</span>
+            <span className={`px-1.5 py-0.5 rounded border text-[10px] ${typeColors[task.type]}`}>
               {task.type}
             </span>
           </li>
