@@ -1,12 +1,12 @@
 /**
  * FILE: modules/billing/components/NewBillingItemForm.tsx
  * ZONE: 🔴 Red
- * PURPOSE: Sheet form for creating new billing line items
+ * PURPOSE: Sheet form for creating new billing line items with service catalogue
  * EXPORTS: NewBillingItemForm
- * DEPENDS ON: react-hook-form, zod, lib/types.ts, lucide-react
+ * DEPENDS ON: react-hook-form, zod, lib/types.ts, lucide-react, useServices
  * CONSUMED BY: app/billing/page.tsx
  * TESTS: modules/billing/tests/NewBillingItemForm.test.tsx
- * LAST CHANGED: 2026-03-06 — Added preselectedClientId prop
+ * LAST CHANGED: 2026-03-06 — Added service catalogue dropdown
  */
 
 // 🔴 RED ZONE — billing module, handle with care
@@ -17,6 +17,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { X } from "lucide-react"
+import { useServices } from "@/modules/services/hooks/useServices"
 import type { Client, BillingLineItem, ServiceType } from "@/lib/types"
 
 const schema = z.object({
@@ -37,11 +38,19 @@ interface NewBillingItemFormProps {
   onClose: () => void
 }
 
+const serviceTypeMap: Record<string, ServiceType> = { boarding: "boarding", lessons: "lesson", farrier: "farrier", vet: "vet", grooming: "other", training: "other", competitions: "other", feed: "other", other: "other" }
+
 export function NewBillingItemForm({ clients, preselectedClientId, onSubmit, onClose }: NewBillingItemFormProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const services = useServices()
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { clientId: preselectedClientId || "", serviceType: "boarding", notes: "", serviceDate: new Date().toISOString().split("T")[0] },
   })
+
+  const handleServiceSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const svc = services.find((s) => s.id === e.target.value)
+    if (svc) { setValue("description", svc.name); setValue("amount", svc.price / 100); setValue("serviceType", serviceTypeMap[svc.category] || "other") }
+  }
 
   const inputClass = "w-full px-3 py-2 rounded-md bg-[#1A1A2E] border border-[var(--border)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
   const labelClass = "block text-xs font-medium text-[var(--text-muted)] mb-1"
@@ -79,6 +88,13 @@ export function NewBillingItemForm({ clients, preselectedClientId, onSubmit, onC
               {clients.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
             </select>
             {errors.clientId && <p className={errorClass}>{errors.clientId.message}</p>}
+          </div>
+          <div>
+            <label className={labelClass}>From Catalogue</label>
+            <select onChange={handleServiceSelect} className={inputClass} defaultValue="">
+              <option value="">— Manual Entry —</option>
+              {services.filter((s) => s.isActive).map((s) => <option key={s.id} value={s.id}>{s.name} (€{(s.price / 100).toFixed(2)})</option>)}
+            </select>
           </div>
           <div>
             <label className={labelClass}>Service Type *</label>

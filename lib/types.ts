@@ -2,11 +2,11 @@
  * FILE: lib/types.ts
  * ZONE: Yellow
  * PURPOSE: Core domain types for the VecHorses platform
- * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType, ClientDocument, ClientDocumentType, StallInstruction, StallInstructionPriority, StableSettings, Invoice, InvoiceStatus
+ * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType, ClientDocument, ClientDocumentType, StallInstruction, StallInstructionPriority, StableSettings, Invoice, InvoiceStatus, Service, ServiceCategory, ServiceUnit
  * DEPENDS ON: None
  * CONSUMED BY: All modules, mock-data.ts
  * TESTS: lib/types.test.ts
- * LAST CHANGED: 2026-03-06 — Added StableSettings and Invoice types for Phase 7b
+ * LAST CHANGED: 2026-03-06 — Added Service type for service catalogue
  */
 
 // BREADCRUMB: These types define the domain model. V2 will add Supabase row types.
@@ -156,5 +156,23 @@ export interface Invoice {
   dueDate: string
   paidDate?: string
   notes?: string
+  createdAt: string
+}
+
+// Service catalogue
+export type ServiceCategory = "boarding" | "lessons" | "farrier" | "vet" | "grooming" | "training" | "competitions" | "feed" | "other"
+export type ServiceUnit = "per_month" | "per_session" | "per_day" | "per_visit" | "per_item" | "custom"
+
+export interface Service {
+  id: string
+  name: string
+  description: string
+  category: ServiceCategory
+  price: number
+  currency: string
+  unit: ServiceUnit
+  unitLabel?: string
+  photoUrl?: string
+  isActive: boolean
   createdAt: string
 }

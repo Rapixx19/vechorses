@@ -6,7 +6,7 @@
  * DEPENDS ON: lucide-react, next/link, next/navigation
  * CONSUMED BY: app/layout.tsx
  * TESTS: components/layout/AppShell.test.tsx
- * LAST CHANGED: 2026-03-05 — Initial creation
+ * LAST CHANGED: 2026-03-06 — Added Services nav item
  */
 
 "use client"
@@ -19,6 +19,7 @@ import {
   Users,
   Grid3X3,
   Receipt,
+  Tag,
   Settings,
   Bell,
 } from "lucide-react"
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/stalls", label: "Stalls", icon: Grid3X3 },
   { href: "/billing", label: "Billing", icon: Receipt },
+  { href: "/services", label: "Services", icon: Tag },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 
