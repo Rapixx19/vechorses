@@ -35,8 +35,16 @@ export default function SettingsPage() {
   const settings = useSettings()
   const updateSettings = useUpdateSettings()
   const invoices = useInvoices()
-  const clients = useClients()
+  const { clients, isLoading: clientsLoading } = useClients()
   const [activeTab, setActiveTab] = useState<SettingsTab>("stable")
+
+  if (clientsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
 
   const handleSave = (updates: Partial<StableSettings>) => {

@@ -22,9 +22,17 @@ interface HorsePhotosProps {
 const getInitials = (name: string) => name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
 
 export function HorsePhotos({ horseId, horseName }: HorsePhotosProps) {
-  const horses = useHorses()
+  const { horses, isLoading } = useHorses()
   const horse = horses.find((h) => h.id === horseId)
   const photos = horse?.photoUrls ?? []
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[300px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
 
   const handleAddPhoto = () => {
     alert("Photo upload available in V2")

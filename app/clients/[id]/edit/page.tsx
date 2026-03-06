@@ -24,13 +24,21 @@ interface PageProps {
 export default function EditClientPage({ params }: PageProps) {
   const { id } = use(params)
   const router = useRouter()
-  const clients = useClients()
+  const { clients, isLoading } = useClients()
   const client = clients.find((c) => c.id === id)
 
   const handleSubmit = (data: Parameters<typeof ClientForm>[0] extends { onSubmit: (d: infer T) => void } ? T : never) => {
     // BREADCRUMB: V1 mock - just log and redirect. Real save comes in V2
     console.log("Update client:", id, data)
     router.push(`/clients/${id}`)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
   }
 
   if (!client) {

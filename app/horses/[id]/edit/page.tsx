@@ -24,13 +24,21 @@ interface PageProps {
 export default function EditHorsePage({ params }: PageProps) {
   const { id } = use(params)
   const router = useRouter()
-  const horses = useHorses()
+  const { horses, isLoading } = useHorses()
   const horse = horses.find((h) => h.id === id)
 
   const handleSubmit = (data: Parameters<typeof HorseForm>[0] extends { onSubmit: (d: infer T) => void } ? T : never) => {
     // BREADCRUMB: V1 mock - just log and redirect. Real save comes in Phase 2
     console.log("Update horse:", id, data)
     router.push(`/horses/${id}`)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
   }
 
   if (!horse) {

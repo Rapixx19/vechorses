@@ -23,11 +23,13 @@ import type { Stall } from "@/lib/types"
 type SheetState = { type: "sheet"; stall: Stall } | { type: "assign"; stall: Stall } | null
 
 export function StallGrid() {
-  const stalls = useStalls()
-  const horses = useHorses()
-  const clients = useClients()
-  const allTasks = useTasks()
+  const { stalls, isLoading: stallsLoading } = useStalls()
+  const { horses, isLoading: horsesLoading } = useHorses()
+  const { clients, isLoading: clientsLoading } = useClients()
+  const { tasks: allTasks, isLoading: tasksLoading } = useTasks()
   const [localStalls, setLocalStalls] = useState(stalls)
+
+  const isLoading = stallsLoading || horsesLoading || clientsLoading || tasksLoading
   const [sheetState, setSheetState] = useState<SheetState>(null)
 
   // BREADCRUMB: Group stalls by block letter extracted from label
@@ -67,6 +69,14 @@ export function StallGrid() {
   const handleCompleteTask = (taskId: string) => {
     // BREADCRUMB: V1 mock — just log. Real completion in V2.
     console.log("Task completed:", taskId)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
   }
 
   return (

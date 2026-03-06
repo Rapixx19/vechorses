@@ -41,11 +41,21 @@ const BREEDS = ["Thoroughbred", "Arabian", "Warmblood", "Friesian", "Andalusian"
 const COLORS = ["Bay", "Chestnut", "Black", "Grey", "Palomino", "Buckskin", "Dun", "Cremello"]
 
 export function HorseForm({ initialData, onSubmit, isEditing = false }: HorseFormProps) {
-  const clients = useClients()
-  const stalls = useStalls()
+  const { clients, isLoading: clientsLoading } = useClients()
+  const { stalls, isLoading: stallsLoading } = useStalls()
+
+  const isLoading = clientsLoading || stallsLoading
 
   // BREADCRUMB: Show only empty stalls + current horse's stall
   const availableStalls = stalls.filter((s) => !s.horseId || s.id === initialData?.stallId)
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
 
   const { register, handleSubmit, formState: { errors } } = useForm<HorseFormData>({
     resolver: zodResolver(horseSchema),

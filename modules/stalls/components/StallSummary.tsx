@@ -14,7 +14,21 @@
 import { useStalls } from "@/modules/stalls"
 
 export function StallSummary() {
-  const stalls = useStalls()
+  const { stalls, isLoading } = useStalls()
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-lg p-4 animate-pulse" style={{ backgroundColor: "#1A1A2E" }}>
+            <div className="h-3 w-16 bg-[#252538] rounded mb-2" />
+            <div className="h-6 w-12 bg-[#252538] rounded" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   const total = stalls.length
   const occupied = stalls.filter((s) => s.horseId).length
   const empty = total - occupied

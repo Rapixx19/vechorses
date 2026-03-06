@@ -31,7 +31,15 @@ type Tab = "overview" | "horses" | "billing" | "documents"
 export function ClientDetail({ clientId }: ClientDetailProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview")
   const router = useRouter()
-  const clients = useClients()
+  const { clients, isLoading } = useClients()
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
 
   const client = clients.find((c) => c.id === clientId)
   if (!client) return <p className="text-red-400">Client not found</p>

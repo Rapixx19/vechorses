@@ -21,10 +21,12 @@ import { HorseCard } from "./HorseCard"
 
 export function HorseList() {
   const [search, setSearch] = useState("")
-  const horses = useHorses()
-  const clients = useClients()
-  const stalls = useStalls()
-  const allTasks = useTasks()
+  const { horses, isLoading: horsesLoading } = useHorses()
+  const { clients, isLoading: clientsLoading } = useClients()
+  const { stalls, isLoading: stallsLoading } = useStalls()
+  const { tasks: allTasks, isLoading: tasksLoading } = useTasks()
+
+  const isLoading = horsesLoading || clientsLoading || stallsLoading || tasksLoading
 
   const getOwnerName = (ownerId: string) =>
     clients.find((c) => c.id === ownerId)?.fullName ?? "Unknown"
@@ -41,6 +43,14 @@ export function HorseList() {
       horse.name.toLowerCase().includes(search.toLowerCase()) ||
       horse.breed.toLowerCase().includes(search.toLowerCase())
   )
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">

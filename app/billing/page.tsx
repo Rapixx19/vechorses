@@ -36,10 +36,18 @@ type ViewTab = "by_client" | "all_transactions"
 
 export default function BillingPage() {
   const billingItems = useBilling()
-  const clients = useClients()
+  const { clients, isLoading: clientsLoading } = useClients()
   const settings = useSettings()
   const createInvoice = useCreateInvoice()
   const [localItems, setLocalItems] = useState(billingItems)
+
+  if (clientsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
   const [activeTab, setActiveTab] = useState<ViewTab>("by_client")
   const [filters, setFilters] = useState<BillingFilterState>({ search: "", status: "all", serviceType: "all", dateRange: "all" })
   const [selectedItem, setSelectedItem] = useState<BillingLineItem | null>(null)

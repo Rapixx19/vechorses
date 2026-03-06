@@ -20,12 +20,22 @@ interface ClientHorsesProps {
 const getInitials = (name: string) => name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
 
 export function ClientHorses({ clientId }: ClientHorsesProps) {
-  const horses = useHorses()
-  const stalls = useStalls()
+  const { horses, isLoading: horsesLoading } = useHorses()
+  const { stalls, isLoading: stallsLoading } = useStalls()
   const clientHorses = horses.filter((h) => h.ownerId === clientId)
+
+  const isLoading = horsesLoading || stallsLoading
 
   const getStallLabel = (stallId: string | null) =>
     stalls.find((s) => s.id === stallId)?.label ?? "No stall"
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
 
   if (clientHorses.length === 0) {
     return (

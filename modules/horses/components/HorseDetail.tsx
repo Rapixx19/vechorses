@@ -30,10 +30,20 @@ type Tab = "overview" | "photos" | "documents"
 
 export function HorseDetail({ horseId }: HorseDetailProps) {
   const [activeTab, setActiveTab] = useState<Tab>("overview")
-  const horses = useHorses()
-  const clients = useClients()
-  const stalls = useStalls()
-  const tasks = useTasks(horseId)
+  const { horses, isLoading: horsesLoading } = useHorses()
+  const { clients, isLoading: clientsLoading } = useClients()
+  const { stalls, isLoading: stallsLoading } = useStalls()
+  const { tasks, isLoading: tasksLoading } = useTasks(horseId)
+
+  const isLoading = horsesLoading || clientsLoading || stallsLoading || tasksLoading
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
 
   const horse = horses.find((h) => h.id === horseId)
   if (!horse) return <p className="text-red-400">Horse not found</p>

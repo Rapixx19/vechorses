@@ -21,15 +21,25 @@ import { ClientCard } from "./ClientCard"
 
 export function ClientList() {
   const [search, setSearch] = useState("")
-  const clients = useClients()
-  const horses = useHorses()
+  const { clients, isLoading: clientsLoading } = useClients()
+  const { horses, isLoading: horsesLoading } = useHorses()
   const billingItems = useBilling()
+
+  const isLoading = clientsLoading || horsesLoading
 
   // BREADCRUMB: Count horses per client for display
   const getHorseCount = (clientId: string) =>
     horses.filter((h) => h.ownerId === clientId).length
 
   const activeClients = clients.filter((c) => c.isActive)
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
   const filteredClients = activeClients.filter(
     (client) =>
       client.fullName.toLowerCase().includes(search.toLowerCase()) ||
