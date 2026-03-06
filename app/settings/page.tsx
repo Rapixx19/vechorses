@@ -3,10 +3,10 @@
  * ZONE: 🔴 Red
  * PURPOSE: Settings page with stable info, billing settings, and invoice history
  * EXPORTS: default (SettingsPage)
- * DEPENDS ON: modules/billing
+ * DEPENDS ON: modules/billing, modules/clients
  * CONSUMED BY: Next.js routing
  * TESTS: app/settings/page.test.tsx
- * LAST CHANGED: 2026-03-06 — Added full settings UI with tabs for Phase 7b
+ * LAST CHANGED: 2026-03-06 — Phase 7c: Updated tabs and added invoice preview
  */
 
 // 🔴 RED ZONE — billing settings, handle with care
@@ -14,7 +14,7 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, Receipt, FileText } from "lucide-react"
+import { Building2, Receipt, FileText, X } from "lucide-react"
 import {
   useSettings,
   useUpdateSettings,
@@ -22,6 +22,8 @@ import {
   StableInfoForm,
   BillingSettingsForm,
   InvoiceHistoryTable,
+  InvoicePreview,
+  generateInvoicePdf,
 } from "@/modules/billing"
 import { useClients } from "@/modules/clients"
 import type { Invoice, StableSettings } from "@/lib/types"
@@ -34,20 +36,29 @@ export default function SettingsPage() {
   const invoices = useInvoices()
   const clients = useClients()
   const [activeTab, setActiveTab] = useState<SettingsTab>("stable")
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
 
   const handleSave = (updates: Partial<StableSettings>) => {
     updateSettings(updates)
   }
 
+  const handlePreviewInvoice = (invoice: Invoice) => {
+    setPreviewInvoice(invoice)
+  }
+
   const handleDownloadInvoice = (invoice: Invoice) => {
-    alert(`Download PDF for ${invoice.invoiceNumber} — coming in V2`)
+    const client = clients.find((c) => c.id === invoice.clientId)
+    const filename = `${invoice.invoiceNumber}-${client?.fullName.replace(/\s+/g, "-") || "invoice"}.pdf`
+    generateInvoicePdf("invoice-preview-modal", filename)
   }
 
   const tabs = [
     { id: "stable" as const, label: "Stable Info", icon: Building2 },
-    { id: "billing" as const, label: "Billing Settings", icon: Receipt },
+    { id: "billing" as const, label: "Billing & Invoices", icon: Receipt },
     { id: "history" as const, label: "Invoice History", icon: FileText },
   ]
+
+  const previewClient = previewInvoice ? clients.find((c) => c.id === previewInvoice.clientId) : null
 
   return (
     <div className="space-y-6">
@@ -76,9 +87,31 @@ export default function SettingsPage() {
         {activeTab === "stable" && <StableInfoForm settings={settings} onSave={handleSave} />}
         {activeTab === "billing" && <BillingSettingsForm settings={settings} onSave={handleSave} />}
         {activeTab === "history" && (
-          <InvoiceHistoryTable invoices={invoices} clients={clients} onDownload={handleDownloadInvoice} />
+          <InvoiceHistoryTable
+            invoices={invoices}
+            clients={clients}
+            onPreview={handlePreviewInvoice}
+            onDownload={handleDownloadInvoice}
+          />
         )}
       </div>
+
+      {/* Invoice Preview Modal */}
+      {previewInvoice && previewClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setPreviewInvoice(null)}>
+          <div className="relative max-h-[90vh] overflow-auto bg-white rounded-lg" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setPreviewInvoice(null)}
+              className="absolute top-4 right-4 z-10 p-2 bg-gray-100 rounded-full text-gray-600 hover:text-gray-900"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div id="invoice-preview-modal">
+              <InvoicePreview invoice={previewInvoice} client={previewClient} settings={settings} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
