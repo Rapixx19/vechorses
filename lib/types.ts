@@ -2,11 +2,11 @@
  * FILE: lib/types.ts
  * ZONE: Yellow
  * PURPOSE: Core domain types for the VecHorses platform
- * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType
+ * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType, ClientDocument, ClientDocumentType, StallInstruction, StallInstructionPriority
  * DEPENDS ON: None
  * CONSUMED BY: All modules, mock-data.ts
  * TESTS: lib/types.test.ts
- * LAST CHANGED: 2026-03-06 — Added HorseDocument type and photoUrls to Horse
+ * LAST CHANGED: 2026-03-06 — Added StallInstruction type for V2 worker tasks
  */
 
 // BREADCRUMB: These types define the domain model. V2 will add Supabase row types.
@@ -50,8 +50,22 @@ export interface Client {
   gdprConsentAt: string | null
   gdprConsentVersion: string | null
   notes: string
+  photoUrl?: string
   isActive: boolean
   createdAt: string
+}
+
+export type ClientDocumentType = "contract" | "waiver" | "insurance" | "id_copy" | "other"
+
+export interface ClientDocument {
+  id: string
+  clientId: string
+  name: string
+  type: ClientDocumentType
+  fileUrl: string
+  fileSize: string
+  uploadedAt: string
+  notes?: string
 }
 
 export interface Stall {
@@ -87,4 +101,19 @@ export interface BillingLineItem {
   status: BillingStatus
   serviceDate: string
   createdAt: string
+}
+
+// V2 FEATURE: StallInstruction — worker task assignment per stall. Full implementation in V2.
+export type StallInstructionPriority = "low" | "normal" | "high"
+
+export interface StallInstruction {
+  id: string
+  stallId: string
+  horseId?: string
+  instruction: string
+  assignedTo?: string
+  priority: StallInstructionPriority
+  completedAt?: string
+  createdAt: string
+  createdBy: string
 }

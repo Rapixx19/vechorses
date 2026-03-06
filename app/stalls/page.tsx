@@ -6,16 +6,17 @@
  * DEPENDS ON: modules/stalls
  * CONSUMED BY: Next.js routing
  * TESTS: app/stalls/page.test.tsx
- * LAST CHANGED: 2026-03-05 — Initial creation
+ * LAST CHANGED: 2026-03-06 — Added StallSummary and StallGrid
  */
+
+import { StallSummary, StallGrid } from "@/modules/stalls"
 
 export default function StallsPage() {
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Stalls</h2>
-      <p className="text-muted-foreground">
-        Visual stall grid showing occupancy and assignments.
-      </p>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-[var(--text-primary)]">Stalls</h2>
+      <StallSummary />
+      <StallGrid />
     </div>
   )
 }

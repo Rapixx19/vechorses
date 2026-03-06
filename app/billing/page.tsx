@@ -1,23 +1,197 @@
 /**
  * FILE: app/billing/page.tsx
- * ZONE: Red
- * PURPOSE: Billing line items log page (read-only view of freelancer data)
+ * ZONE: 🔴 Red
+ * PURPOSE: Billing page with client-centric view and transaction log
  * EXPORTS: default (BillingPage)
- * DEPENDS ON: modules/billing
+ * DEPENDS ON: modules/billing, modules/clients
  * CONSUMED BY: Next.js routing
  * TESTS: app/billing/page.test.tsx
- * LAST CHANGED: 2026-03-05 — Initial creation
+ * LAST CHANGED: 2026-03-06 — Added two-tab layout with client cards
  */
 
-// BREADCRUMB: RED ZONE — billing data is written by external freelancer, we only read
+// 🔴 RED ZONE — billing data is written by external freelancer, we only read
+
+"use client"
+
+import { useState, useMemo } from "react"
+import { Plus, FileText, Download } from "lucide-react"
+import {
+  useBilling,
+  BillingStats,
+  BillingFilters,
+  BillingTable,
+  BillingItemSheet,
+  NewBillingItemForm,
+  MonthlyRevenueSummary,
+  ClientBillingCard,
+} from "@/modules/billing"
+import type { BillingFilterState } from "@/modules/billing"
+import { useClients } from "@/modules/clients"
+import type { BillingLineItem, BillingStatus } from "@/lib/types"
+
+type ViewTab = "by_client" | "all_transactions"
 
 export default function BillingPage() {
+  const billingItems = useBilling()
+  const clients = useClients()
+  const [localItems, setLocalItems] = useState(billingItems)
+  const [activeTab, setActiveTab] = useState<ViewTab>("by_client")
+  const [filters, setFilters] = useState<BillingFilterState>({ search: "", status: "all", serviceType: "all", dateRange: "all" })
+  const [selectedItem, setSelectedItem] = useState<BillingLineItem | null>(null)
+  const [showNewForm, setShowNewForm] = useState(false)
+  const [preselectedClientId, setPreselectedClientId] = useState<string | null>(null)
+
+  // BREADCRUMB: Group items by client for client-centric view
+  const clientsWithItems = useMemo(() => {
+    const grouped = new Map<string, BillingLineItem[]>()
+    localItems.forEach((item) => {
+      const existing = grouped.get(item.clientId) || []
+      grouped.set(item.clientId, [...existing, item])
+    })
+    return clients
+      .filter((c) => grouped.has(c.id))
+      .map((c) => ({ client: c, items: grouped.get(c.id) || [] }))
+      .sort((a, b) => {
+        const aPending = a.items.some((i) => i.status === "pending")
+        const bPending = b.items.some((i) => i.status === "pending")
+        if (aPending && !bPending) return -1
+        if (!aPending && bPending) return 1
+        return a.client.fullName.localeCompare(b.client.fullName)
+      })
+  }, [localItems, clients])
+
+  // BREADCRUMB: Filter items for table view
+  const filteredItems = useMemo(() => {
+    const now = new Date()
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const last3Months = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+
+    return localItems.filter((item) => {
+      const clientName = clients.find((c) => c.id === item.clientId)?.fullName?.toLowerCase() || ""
+      const searchMatch = filters.search === "" || clientName.includes(filters.search.toLowerCase()) || item.description.toLowerCase().includes(filters.search.toLowerCase())
+      const statusMatch = filters.status === "all" || item.status === filters.status
+      const serviceMatch = filters.serviceType === "all" || item.serviceType === filters.serviceType
+      const itemDate = new Date(item.serviceDate)
+      let dateMatch = true
+      if (filters.dateRange === "this_month") dateMatch = itemDate >= thisMonth
+      else if (filters.dateRange === "last_month") dateMatch = itemDate >= lastMonth && itemDate < thisMonth
+      else if (filters.dateRange === "last_3_months") dateMatch = itemDate >= last3Months
+      return searchMatch && statusMatch && serviceMatch && dateMatch
+    })
+  }, [localItems, clients, filters])
+
+  const handleStatusChange = (itemId: string, newStatus: BillingStatus) => {
+    setLocalItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, status: newStatus } : i)))
+    setSelectedItem(null)
+  }
+
+  const handleClientStatusChange = (clientId: string, newStatus: BillingStatus) => {
+    setLocalItems((prev) => prev.map((i) => (i.clientId === clientId && i.status === "pending" ? { ...i, status: newStatus } : i)))
+  }
+
+  const handleDelete = (itemId: string) => {
+    setLocalItems((prev) => prev.filter((i) => i.id !== itemId))
+    setSelectedItem(null)
+  }
+
+  const handleNewItem = (item: Omit<BillingLineItem, "id" | "createdAt">) => {
+    const newItem: BillingLineItem = { ...item, id: `billing-${Date.now()}`, createdAt: new Date().toISOString() }
+    setLocalItems((prev) => [newItem, ...prev])
+  }
+
+  const handleAddItemForClient = (clientId: string) => {
+    setPreselectedClientId(clientId)
+    setShowNewForm(true)
+  }
+
+  const handleGenerateAllInvoices = () => {
+    alert("Generate all invoices — coming in V2")
+  }
+
+  const handleExportCsv = () => {
+    alert("Export CSV — coming in V2")
+  }
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Billing</h2>
-      <p className="text-muted-foreground">
-        View billing line items and payment status.
-      </p>
+    <div className="space-y-6">
+      {/* Header with Actions */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Billing</h2>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowNewForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
+            <Plus className="h-4 w-4" />Add Service
+          </button>
+          <button onClick={handleGenerateAllInvoices} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-blue-900/30 text-blue-400 hover:bg-blue-900/50">
+            <FileText className="h-4 w-4" />Generate All Invoices
+          </button>
+          <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+            <Download className="h-4 w-4" />Export CSV
+          </button>
+        </div>
+      </div>
+
+      <BillingStats items={localItems} />
+      <MonthlyRevenueSummary items={localItems} />
+
+      {/* Tab Navigation */}
+      <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: "#1A1A2E" }}>
+        <button
+          onClick={() => setActiveTab("by_client")}
+          className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === "by_client" ? "bg-[#2C5F2E] text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+        >
+          By Client
+        </button>
+        <button
+          onClick={() => setActiveTab("all_transactions")}
+          className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === "all_transactions" ? "bg-[#2C5F2E] text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+        >
+          All Transactions
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "by_client" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {clientsWithItems.map(({ client, items }) => (
+            <ClientBillingCard
+              key={client.id}
+              client={client}
+              items={items}
+              onStatusChange={handleClientStatusChange}
+              onAddItem={handleAddItemForClient}
+              onGenerateInvoice={(clientId) => alert(`Generate invoice for ${clientId} — coming in V2`)}
+            />
+          ))}
+          {clientsWithItems.length === 0 && (
+            <div className="col-span-full text-center py-12 text-[var(--text-muted)]">No billing items found</div>
+          )}
+        </div>
+      ) : (
+        <>
+          <BillingFilters filters={filters} onChange={setFilters} />
+          <BillingTable items={filteredItems} clients={clients} onItemClick={setSelectedItem} />
+        </>
+      )}
+
+      {selectedItem && (
+        <BillingItemSheet
+          item={selectedItem}
+          client={clients.find((c) => c.id === selectedItem.clientId) || null}
+          onClose={() => setSelectedItem(null)}
+          onStatusChange={handleStatusChange}
+          onDelete={handleDelete}
+        />
+      )}
+
+      {showNewForm && (
+        <NewBillingItemForm
+          clients={clients}
+          preselectedClientId={preselectedClientId}
+          onSubmit={handleNewItem}
+          onClose={() => { setShowNewForm(false); setPreselectedClientId(null) }}
+        />
+      )}
     </div>
   )
 }

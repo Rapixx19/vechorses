@@ -6,7 +6,7 @@
  * DEPENDS ON: lib/types.ts
  * CONSUMED BY: lib/mock/index.ts
  * TESTS: lib/mock/clients.test.ts
- * LAST CHANGED: 2026-03-05 — Split from mock-data.ts
+ * LAST CHANGED: 2026-03-06 — Added photoUrl with dicebear avatars
  */
 
 import type { Client } from "@/lib/types"
@@ -22,6 +22,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-06-15T10:30:00Z",
     gdprConsentVersion: "1.0",
     notes: "Prefers communication via WhatsApp",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=MarcoBianchi",
     isActive: true,
     createdAt: "2024-01-10T09:00:00Z",
   },
@@ -35,6 +36,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-07-20T14:15:00Z",
     gdprConsentVersion: "1.0",
     notes: "Competes in dressage events",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=SofiaRossi",
     isActive: true,
     createdAt: "2024-02-05T11:30:00Z",
   },
@@ -48,6 +50,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-05-10T09:45:00Z",
     gdprConsentVersion: "1.0",
     notes: "Professional trainer, owns 3 horses",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=AlessandroFerrari",
     isActive: true,
     createdAt: "2023-11-20T08:00:00Z",
   },
@@ -61,6 +64,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-08-05T16:00:00Z",
     gdprConsentVersion: "1.0",
     notes: "Weekend rider, visits Saturday mornings",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=GiuliaConti",
     isActive: true,
     createdAt: "2024-03-15T10:00:00Z",
   },
@@ -74,6 +78,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-04-22T11:30:00Z",
     gdprConsentVersion: "1.0",
     notes: "Owns 2 horses, interested in breeding",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=FrancescoMoretti",
     isActive: true,
     createdAt: "2023-09-08T14:00:00Z",
   },
@@ -87,6 +92,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-09-12T10:00:00Z",
     gdprConsentVersion: "1.0",
     notes: "Show jumping competitor",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=ChiaraLombardi",
     isActive: true,
     createdAt: "2024-04-20T09:30:00Z",
   },
@@ -100,6 +106,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-10-01T15:45:00Z",
     gdprConsentVersion: "1.0",
     notes: "Owns 2 Arabian horses",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=MatteoRomano",
     isActive: true,
     createdAt: "2024-05-10T11:00:00Z",
   },
@@ -113,6 +120,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-11-18T09:00:00Z",
     gdprConsentVersion: "1.0",
     notes: "Therapeutic riding instructor",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=ValentinaGreco",
     isActive: true,
     createdAt: "2024-06-25T13:00:00Z",
   },
@@ -126,6 +134,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2025-12-03T14:30:00Z",
     gdprConsentVersion: "1.0",
     notes: "New client, beginner rider",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=LorenzoRicci",
     isActive: true,
     createdAt: "2025-01-05T10:00:00Z",
   },
@@ -139,6 +148,7 @@ export const mockClients: Client[] = [
     gdprConsentAt: "2026-01-15T11:00:00Z",
     gdprConsentVersion: "1.0",
     notes: "Eventing competitor, owns 3 horses",
+    photoUrl: "https://api.dicebear.com/7.x/initials/svg?seed=ElisaMarino",
     isActive: true,
     createdAt: "2024-08-12T09:00:00Z",
   },
