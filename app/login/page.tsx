@@ -1,17 +1,18 @@
 /**
  * FILE: app/login/page.tsx
  * ZONE: Green
- * PURPOSE: Login page for authentication
+ * PURPOSE: Login page for authentication with registration options
  * EXPORTS: default (page component)
- * DEPENDS ON: lib/hooks/useAuth.ts
+ * DEPENDS ON: lib/hooks/useAuth.ts, next/link
  * CONSUMED BY: Next.js App Router
  * TESTS: None (route handler)
- * LAST CHANGED: 2026-03-06 — Initial creation for auth system
+ * LAST CHANGED: 2026-03-06 — Added registration and referral code links
  */
 
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { Loader2 } from "lucide-react"
 
@@ -66,6 +67,23 @@ export default function LoginPage() {
             {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</> : "Sign in"}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-[#3A3A52]" />
+          <span className="text-xs text-[var(--text-muted)]">or</span>
+          <div className="flex-1 h-px bg-[#3A3A52]" />
+        </div>
+
+        {/* Registration Options */}
+        <div className="space-y-3">
+          <Link href="/register" className="w-full py-3 rounded-lg text-sm font-medium text-[var(--text-primary)] border border-[#3A3A52] hover:border-[#2C5F2E] flex items-center justify-center transition-colors">
+            Create a new stable account
+          </Link>
+          <Link href="/join" className="block text-center text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+            Joining an existing stable? Enter referral code →
+          </Link>
+        </div>
 
         {/* Footer */}
         <p className="text-center text-xs text-[var(--text-muted)] mt-8">VecHorses — Stable Management</p>
