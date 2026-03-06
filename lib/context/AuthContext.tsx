@@ -27,7 +27,6 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null)
 
-const generateReferralCode = () => Math.random().toString(36).substring(2, 10).toUpperCase()
 
 // Fetches profile and builds AuthUser from Supabase data
 async function fetchUserProfile(supabase: ReturnType<typeof createClient>, userId: string): Promise<AuthUser | null> {
@@ -96,29 +95,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (fullName: string, email: string, password: string, stableName: string) => {
+      console.log("Attempting registration for:", email)
       setIsLoading(true)
+
+      // Step 1: Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } },
       })
+      console.log("SignUp result:", { user: authData?.user?.id, error: authError })
+
       if (authError || !authData.user) {
         setIsLoading(false)
         throw new Error(authError?.message || "Registration failed")
       }
 
-      const referralCode = generateReferralCode()
-      const { data: stable, error: stableError } = await supabase
-        .from("stables")
-        .insert({ stable_name: stableName, referral_code: referralCode, owner_user_id: authData.user.id })
-        .select()
-        .single()
-      if (stableError) {
+      // Step 2: Create stable and profile via API route (handles RLS)
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: authData.user.id,
+          fullName,
+          stableName,
+        }),
+      })
+
+      const result = await res.json()
+      console.log("API register result:", result)
+
+      if (!res.ok) {
         setIsLoading(false)
-        throw new Error(stableError.message)
+        throw new Error(result.error || "Failed to create stable")
       }
 
-      await supabase.from("profiles").update({ stable_id: stable.id, role: "owner" }).eq("id", authData.user.id)
       setIsLoading(false)
       router.push("/dashboard")
     },
@@ -127,31 +138,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const joinWithCode = useCallback(
     async (code: string, fullName: string, email: string, password: string) => {
+      console.log("Attempting join with code:", code)
       setIsLoading(true)
-      const { data: stable, error: stableError } = await supabase
-        .from("stables")
-        .select("id")
-        .eq("referral_code", code.toUpperCase())
-        .single()
-      if (stableError || !stable) {
-        setIsLoading(false)
-        throw new Error("Invalid referral code")
-      }
 
+      // Step 1: Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } },
       })
+      console.log("SignUp result:", { user: authData?.user?.id, error: authError })
+
       if (authError || !authData.user) {
         setIsLoading(false)
         throw new Error(authError?.message || "Registration failed")
       }
 
-      await supabase.from("profiles").update({ stable_id: stable.id, role: "staff" }).eq("id", authData.user.id)
-      await supabase
-        .from("team_members")
-        .insert({ stable_id: stable.id, full_name: fullName, email, role: "staff", status: "pending" })
+      // Step 2: Join stable via API route (handles RLS and validates code)
+      const res = await fetch("/api/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: authData.user.id,
+          fullName,
+          email,
+          code,
+        }),
+      })
+
+      const result = await res.json()
+      console.log("API join result:", result)
+
+      if (!res.ok) {
+        setIsLoading(false)
+        throw new Error(result.error || "Failed to join stable")
+      }
+
       setIsLoading(false)
       router.push("/dashboard")
     },
