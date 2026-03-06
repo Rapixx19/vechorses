@@ -2,11 +2,11 @@
  * FILE: lib/types.ts
  * ZONE: Yellow
  * PURPOSE: Core domain types for the VecHorses platform
- * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType, ClientDocument, ClientDocumentType, StallInstruction, StallInstructionPriority, StableSettings, Invoice, InvoiceStatus, Service, ServiceCategory, ServiceUnit
+ * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType, ClientDocument, ClientDocumentType, StallInstruction, StallInstructionPriority, StableSettings, Invoice, InvoiceStatus, Service, ServiceCategory, ServiceUnit, UserRole, ModulePermission, TeamMember, AuthUser, ModuleName
  * DEPENDS ON: None
  * CONSUMED BY: All modules, mock-data.ts
  * TESTS: lib/types.test.ts
- * LAST CHANGED: 2026-03-06 — Added Service type for service catalogue
+ * LAST CHANGED: 2026-03-06 — Added auth types for role system
  */
 
 // BREADCRUMB: These types define the domain model. V2 will add Supabase row types.
@@ -175,4 +175,35 @@ export interface Service {
   photoUrl?: string
   isActive: boolean
   createdAt: string
+}
+
+// Auth & Team Management
+export type UserRole = "owner" | "manager" | "staff" | "custom"
+export type ModuleName = "dashboard" | "horses" | "clients" | "stalls" | "billing" | "services" | "settings"
+
+export interface ModulePermission {
+  module: ModuleName
+  canView: boolean
+  canEdit: boolean
+  canDelete: boolean
+}
+
+export interface TeamMember {
+  id: string
+  fullName: string
+  email: string
+  role: UserRole
+  permissions: ModulePermission[]
+  isActive: boolean
+  invitedAt: string
+  lastLoginAt?: string
+  avatarUrl?: string
+}
+
+export interface AuthUser {
+  id: string
+  fullName: string
+  email: string
+  role: UserRole
+  permissions: ModulePermission[]
 }

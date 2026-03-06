@@ -1,16 +1,16 @@
 /**
  * FILE: app/layout.tsx
  * ZONE: Green
- * PURPOSE: Root layout with AppShell and dark theme
+ * PURPOSE: Root layout with AuthProvider and dark theme
  * EXPORTS: metadata, default (RootLayout)
- * DEPENDS ON: components/layout/AppShell, globals.css
+ * DEPENDS ON: components/layout/AuthLayout, globals.css
  * CONSUMED BY: Next.js App Router
  * TESTS: None (layout file)
- * LAST CHANGED: 2026-03-05 — Added AppShell and dark theme
+ * LAST CHANGED: 2026-03-06 — Added AuthLayout for auth system
  */
 
 import type { Metadata } from "next"
-import { AppShell } from "@/components/layout/AppShell"
+import { AuthLayout } from "@/components/layout/AuthLayout"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background font-sans antialiased">
-        <AppShell>{children}</AppShell>
+        <AuthLayout>{children}</AuthLayout>
       </body>
     </html>
   )

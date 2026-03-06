@@ -1,12 +1,12 @@
 /**
  * FILE: app/settings/page.tsx
  * ZONE: 🔴 Red
- * PURPOSE: Settings page with stable info, billing settings, and invoice history
+ * PURPOSE: Settings page with stable info, billing settings, invoice history, and team management
  * EXPORTS: default (SettingsPage)
- * DEPENDS ON: modules/billing, modules/clients
+ * DEPENDS ON: modules/billing, modules/clients, modules/settings
  * CONSUMED BY: Next.js routing
  * TESTS: app/settings/page.test.tsx
- * LAST CHANGED: 2026-03-06 — Phase 7c: Updated tabs and added invoice preview
+ * LAST CHANGED: 2026-03-06 — Added Team tab for team management
  */
 
 // 🔴 RED ZONE — billing settings, handle with care
@@ -14,7 +14,7 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, Receipt, FileText, X } from "lucide-react"
+import { Building2, Receipt, FileText, Users, X } from "lucide-react"
 import {
   useSettings,
   useUpdateSettings,
@@ -26,9 +26,10 @@ import {
   generateInvoicePdf,
 } from "@/modules/billing"
 import { useClients } from "@/modules/clients"
+import { TeamManager } from "@/modules/settings"
 import type { Invoice, StableSettings } from "@/lib/types"
 
-type SettingsTab = "stable" | "billing" | "history"
+type SettingsTab = "stable" | "billing" | "history" | "team"
 
 export default function SettingsPage() {
   const settings = useSettings()
@@ -56,6 +57,7 @@ export default function SettingsPage() {
     { id: "stable" as const, label: "Stable Info", icon: Building2 },
     { id: "billing" as const, label: "Billing & Invoices", icon: Receipt },
     { id: "history" as const, label: "Invoice History", icon: FileText },
+    { id: "team" as const, label: "Team", icon: Users },
   ]
 
   const previewClient = previewInvoice ? clients.find((c) => c.id === previewInvoice.clientId) : null
@@ -94,6 +96,7 @@ export default function SettingsPage() {
             onDownload={handleDownloadInvoice}
           />
         )}
+        {activeTab === "team" && <TeamManager />}
       </div>
 
       {/* Invoice Preview Modal */}
