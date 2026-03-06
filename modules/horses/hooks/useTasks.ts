@@ -48,6 +48,15 @@ export function useTasks(horseId?: string): UseTasksReturn {
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
+    // If logged in but no stableId, show empty state (not mock data)
+    if (currentUser && !currentUser.stableId) {
+      console.warn("useTasks: User logged in but stableId is missing - showing empty state")
+      setTasks([])
+      setIsLoading(false)
+      return
+    }
+
+    // Not logged in yet
     if (!currentUser?.stableId) {
       setIsLoading(false)
       return

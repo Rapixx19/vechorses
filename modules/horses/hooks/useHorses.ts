@@ -51,6 +51,15 @@ export function useHorses(): UseHorsesReturn {
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
+    // If logged in but no stableId, show empty state (not mock data)
+    if (currentUser && !currentUser.stableId) {
+      console.warn("useHorses: User logged in but stableId is missing - showing empty state")
+      setHorses([])
+      setIsLoading(false)
+      return
+    }
+
+    // Not logged in yet
     if (!currentUser?.stableId) {
       setIsLoading(false)
       return

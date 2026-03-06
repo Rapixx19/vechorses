@@ -6,7 +6,7 @@
  * DEPENDS ON: lib/types.ts, lib/supabase.ts, lib/mock
  * CONSUMED BY: app/layout.tsx, lib/hooks/useAuth.ts
  * TESTS: lib/context/AuthContext.test.tsx
- * LAST CHANGED: 2026-03-06 — Fixed infinite loop, auto-create profile
+ * LAST CHANGED: 2026-03-07 — Auto-link stable_id when missing from profile
  */
 
 "use client"
@@ -30,6 +30,7 @@ export const AuthContext = createContext<AuthContextType | null>(null)
 
 // Fetches profile and builds AuthUser from Supabase data
 // If profile doesn't exist, creates a basic one on the fly
+// If stable_id is missing, attempts to link to an owned stable
 async function fetchUserProfile(
   supabase: ReturnType<typeof createClient>,
   userId: string,
@@ -42,11 +43,21 @@ async function fetchUserProfile(
     console.log("Profile not found, creating basic profile for:", userId)
     const defaultPermissions = getDefaultPermissions("owner")
 
+    // Check if user owns a stable (created during registration)
+    const { data: ownedStable } = await supabase
+      .from("stables")
+      .select("id, stable_name")
+      .eq("owner_user_id", userId)
+      .single()
+
+    const stableId = ownedStable?.id || undefined
+
     await supabase.from("profiles").upsert({
       id: userId,
       full_name: userEmail || "User",
       role: "owner",
       permissions: defaultPermissions,
+      stable_id: stableId,
     })
 
     return {
@@ -55,8 +66,42 @@ async function fetchUserProfile(
       email: userEmail || "",
       role: "owner",
       permissions: defaultPermissions,
-      stableId: undefined,
+      stableId,
+      stableName: ownedStable?.stable_name,
     }
+  }
+
+  // Profile exists - check if stable_id is missing but user owns a stable
+  let stableId = data.stable_id
+  let stableName: string | undefined
+
+  if (!stableId) {
+    console.log("Profile has no stable_id, checking for owned stable...")
+    const { data: ownedStable } = await supabase
+      .from("stables")
+      .select("id, stable_name")
+      .eq("owner_user_id", userId)
+      .single()
+
+    if (ownedStable) {
+      console.log("Found owned stable, linking to profile:", ownedStable.id)
+      stableId = ownedStable.id
+      stableName = ownedStable.stable_name
+
+      // Update profile with stable_id
+      await supabase
+        .from("profiles")
+        .update({ stable_id: stableId })
+        .eq("id", userId)
+    }
+  } else {
+    // Fetch stable name for display
+    const { data: stable } = await supabase
+      .from("stables")
+      .select("stable_name")
+      .eq("id", stableId)
+      .single()
+    stableName = stable?.stable_name
   }
 
   const { data: authData } = await supabase.auth.getUser()
@@ -66,7 +111,8 @@ async function fetchUserProfile(
     email: authData.user?.email || "",
     role: data.role || "staff",
     permissions: (data.permissions as ModulePermission[]) || [],
-    stableId: data.stable_id,
+    stableId,
+    stableName,
   }
 }
 
