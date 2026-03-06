@@ -3,17 +3,18 @@
  * ZONE: 🔴 Red — critical auth infrastructure
  * PURPOSE: React context for Supabase auth state management
  * EXPORTS: AuthProvider, AuthContext
- * DEPENDS ON: lib/types.ts, lib/supabase.ts
+ * DEPENDS ON: lib/types.ts, lib/supabase.ts, lib/mock
  * CONSUMED BY: app/layout.tsx, lib/hooks/useAuth.ts
  * TESTS: lib/context/AuthContext.test.tsx
- * LAST CHANGED: 2026-03-06 — V2 real Supabase auth
+ * LAST CHANGED: 2026-03-06 — Fixed infinite loop, auto-create profile
  */
 
 "use client"
 
-import { createContext, useState, useCallback, useEffect, type ReactNode } from "react"
+import { createContext, useState, useCallback, useEffect, useMemo, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
+import { getDefaultPermissions } from "@/lib/mock"
 import type { AuthUser, ModulePermission } from "@/lib/types"
 
 interface AuthContextType {
@@ -27,11 +28,37 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null)
 
-
 // Fetches profile and builds AuthUser from Supabase data
-async function fetchUserProfile(supabase: ReturnType<typeof createClient>, userId: string): Promise<AuthUser | null> {
-  const { data } = await supabase.from("profiles").select("*").eq("id", userId).single()
-  if (!data) return null
+// If profile doesn't exist, creates a basic one on the fly
+async function fetchUserProfile(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  userEmail?: string
+): Promise<AuthUser | null> {
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
+
+  // If profile not found, create a basic one
+  if (error || !data) {
+    console.log("Profile not found, creating basic profile for:", userId)
+    const defaultPermissions = getDefaultPermissions("owner")
+
+    await supabase.from("profiles").upsert({
+      id: userId,
+      full_name: userEmail || "User",
+      role: "owner",
+      permissions: defaultPermissions,
+    })
+
+    return {
+      id: userId,
+      fullName: userEmail || "User",
+      email: userEmail || "",
+      role: "owner",
+      permissions: defaultPermissions,
+      stableId: undefined,
+    }
+  }
+
   const { data: authData } = await supabase.auth.getUser()
   return {
     id: data.id,
@@ -47,23 +74,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
+
+  // Memoize supabase client to prevent infinite re-renders
+  const supabase = useMemo(() => createClient(), [])
 
   // Restore session on mount and listen for auth changes
   useEffect(() => {
-    supabase.auth.getSession().then((response: { data: { session: { user: { id: string } } | null } }) => {
+    supabase.auth.getSession().then((response: { data: { session: { user: { id: string; email?: string } } | null } }) => {
       const session = response.data.session
       if (session?.user) {
-        fetchUserProfile(supabase, session.user.id).then(setCurrentUser)
+        fetchUserProfile(supabase, session.user.id, session.user.email).then(setCurrentUser)
       }
       setIsLoading(false)
     })
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event: string, session: { user: { id: string } } | null) => {
+    } = supabase.auth.onAuthStateChange(async (event: string, session: { user: { id: string; email?: string } } | null) => {
       if (event === "SIGNED_IN" && session?.user) {
-        const profile = await fetchUserProfile(supabase, session.user.id)
+        const profile = await fetchUserProfile(supabase, session.user.id, session.user.email)
         setCurrentUser(profile)
       } else if (event === "SIGNED_OUT") {
         setCurrentUser(null)
@@ -75,11 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      console.log("Attempting login with:", email)
-      console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
       setIsLoading(true)
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      console.log("Login result:", { data, error })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       setIsLoading(false)
       if (error) throw new Error(error.message)
       router.push("/dashboard")
@@ -95,7 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (fullName: string, email: string, password: string, stableName: string) => {
-      console.log("Attempting registration for:", email)
       setIsLoading(true)
 
       // Step 1: Create auth user
@@ -104,7 +129,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         options: { data: { full_name: fullName } },
       })
-      console.log("SignUp result:", { user: authData?.user?.id, error: authError })
 
       if (authError || !authData.user) {
         setIsLoading(false)
@@ -123,7 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       const result = await res.json()
-      console.log("API register result:", result)
 
       if (!res.ok) {
         setIsLoading(false)
@@ -138,7 +161,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const joinWithCode = useCallback(
     async (code: string, fullName: string, email: string, password: string) => {
-      console.log("Attempting join with code:", code)
       setIsLoading(true)
 
       // Step 1: Create auth user
@@ -147,7 +169,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         options: { data: { full_name: fullName } },
       })
-      console.log("SignUp result:", { user: authData?.user?.id, error: authError })
 
       if (authError || !authData.user) {
         setIsLoading(false)
@@ -167,7 +188,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       const result = await res.json()
-      console.log("API join result:", result)
 
       if (!res.ok) {
         setIsLoading(false)

@@ -207,4 +207,5 @@ export interface AuthUser {
   role: UserRole
   permissions: ModulePermission[]
   stableId?: string
+  stableName?: string
 }

@@ -15,11 +15,6 @@ export const createClient = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Debug logging for production issues
-  if (typeof window !== "undefined") {
-    console.log("Supabase client init:", { hasUrl: !!url, hasKey: !!key })
-  }
-
   if (!url || !key) {
     // During SSR/static build, return mock client
     // At runtime, this should never happen if env vars are set correctly
