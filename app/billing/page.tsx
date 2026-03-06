@@ -17,6 +17,8 @@ import { useState, useMemo } from "react"
 import { Plus, FileText, Download } from "lucide-react"
 import {
   useBilling,
+  useSettings,
+  useCreateInvoice,
   BillingStats,
   BillingFilters,
   BillingTable,
@@ -24,22 +26,26 @@ import {
   NewBillingItemForm,
   MonthlyRevenueSummary,
   ClientBillingCard,
+  InvoiceBuilder,
 } from "@/modules/billing"
 import type { BillingFilterState } from "@/modules/billing"
 import { useClients } from "@/modules/clients"
-import type { BillingLineItem, BillingStatus } from "@/lib/types"
+import type { BillingLineItem, BillingStatus, Client, Invoice } from "@/lib/types"
 
 type ViewTab = "by_client" | "all_transactions"
 
 export default function BillingPage() {
   const billingItems = useBilling()
   const clients = useClients()
+  const settings = useSettings()
+  const createInvoice = useCreateInvoice()
   const [localItems, setLocalItems] = useState(billingItems)
   const [activeTab, setActiveTab] = useState<ViewTab>("by_client")
   const [filters, setFilters] = useState<BillingFilterState>({ search: "", status: "all", serviceType: "all", dateRange: "all" })
   const [selectedItem, setSelectedItem] = useState<BillingLineItem | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
   const [preselectedClientId, setPreselectedClientId] = useState<string | null>(null)
+  const [invoiceClient, setInvoiceClient] = useState<{ client: Client; items: BillingLineItem[] } | null>(null)
 
   // BREADCRUMB: Group items by client for client-centric view
   const clientsWithItems = useMemo(() => {
@@ -160,7 +166,7 @@ export default function BillingPage() {
               items={items}
               onStatusChange={handleClientStatusChange}
               onAddItem={handleAddItemForClient}
-              onGenerateInvoice={(clientId) => alert(`Generate invoice for ${clientId} — coming in V2`)}
+              onGenerateInvoice={() => setInvoiceClient({ client, items: items.filter((i) => i.status === "pending") })}
             />
           ))}
           {clientsWithItems.length === 0 && (
@@ -190,6 +196,21 @@ export default function BillingPage() {
           preselectedClientId={preselectedClientId}
           onSubmit={handleNewItem}
           onClose={() => { setShowNewForm(false); setPreselectedClientId(null) }}
+        />
+      )}
+
+      {invoiceClient && (
+        <InvoiceBuilder
+          clientId={invoiceClient.client.id}
+          client={invoiceClient.client}
+          lineItems={invoiceClient.items}
+          settings={settings}
+          onClose={() => setInvoiceClient(null)}
+          onSave={(invoice: Invoice) => {
+            createInvoice(invoice.clientId, invoice.lineItems, invoice.taxRate, invoice.notes)
+            setLocalItems((prev) => prev.map((i) => (invoiceClient.items.some((ii) => ii.id === i.id) ? { ...i, status: "invoiced" as const } : i)))
+            setInvoiceClient(null)
+          }}
         />
       )}
     </div>

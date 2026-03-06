@@ -2,11 +2,11 @@
  * FILE: lib/types.ts
  * ZONE: Yellow
  * PURPOSE: Core domain types for the VecHorses platform
- * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType, ClientDocument, ClientDocumentType, StallInstruction, StallInstructionPriority
+ * EXPORTS: Horse, Client, Stall, Task, BillingLineItem, HorseDocument, DocumentType, ClientDocument, ClientDocumentType, StallInstruction, StallInstructionPriority, StableSettings, Invoice, InvoiceStatus
  * DEPENDS ON: None
  * CONSUMED BY: All modules, mock-data.ts
  * TESTS: lib/types.test.ts
- * LAST CHANGED: 2026-03-06 — Added StallInstruction type for V2 worker tasks
+ * LAST CHANGED: 2026-03-06 — Added StableSettings and Invoice types for Phase 7b
  */
 
 // BREADCRUMB: These types define the domain model. V2 will add Supabase row types.
@@ -116,4 +116,45 @@ export interface StallInstruction {
   completedAt?: string
   createdAt: string
   createdBy: string
+}
+
+// 🔴 RED ZONE — Billing settings and invoices
+export interface StableSettings {
+  stableName: string
+  ownerName: string
+  address: string
+  city: string
+  country: string
+  phone: string
+  email: string
+  vatNumber?: string
+  logoUrl?: string
+  bankName?: string
+  bankIban?: string
+  bankBic?: string
+  invoicePrefix: string
+  invoiceStartNumber: number
+  billingDayOfMonth: number
+  currency: string
+  invoiceNotes?: string
+  invoiceFooter?: string
+}
+
+export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled"
+
+export interface Invoice {
+  id: string
+  invoiceNumber: string
+  clientId: string
+  lineItems: BillingLineItem[]
+  subtotal: number
+  tax?: number
+  taxRate?: number
+  total: number
+  status: InvoiceStatus
+  issuedDate: string
+  dueDate: string
+  paidDate?: string
+  notes?: string
+  createdAt: string
 }
