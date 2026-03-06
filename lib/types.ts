@@ -206,4 +206,5 @@ export interface AuthUser {
   email: string
   role: UserRole
   permissions: ModulePermission[]
+  stableId?: string
 }
