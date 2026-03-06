@@ -52,7 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Restore session on mount and listen for auth changes
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then((response: { data: { session: { user: { id: string } } | null } }) => {
+      const session = response.data.session
       if (session?.user) {
         fetchUserProfile(supabase, session.user.id).then(setCurrentUser)
       }
@@ -61,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: string, session: { user: { id: string } } | null) => {
       if (event === "SIGNED_IN" && session?.user) {
         const profile = await fetchUserProfile(supabase, session.user.id)
         setCurrentUser(profile)
