@@ -11,17 +11,12 @@
 
 import { createBrowserClient } from "@supabase/ssr"
 
-// BREADCRUMB: Validate env vars at module load time for clear error messages
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// BREADCRUMB: Fallback to empty strings during static prerender
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 
-if (!supabaseUrl) {
-  throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL in environment variables")
-}
-
-if (!supabaseAnonKey) {
-  throw new Error("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY in environment variables")
-}
+if (!supabaseUrl) console.warn("Missing NEXT_PUBLIC_SUPABASE_URL")
+if (!supabaseAnonKey) console.warn("Missing NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
 // BREADCRUMB: Browser client for use in Client Components
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
