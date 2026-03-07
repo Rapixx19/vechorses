@@ -12,7 +12,7 @@
 // BREADCRUMB: Module boundary — only export from here, never import subfolders directly
 
 // Hooks
-export { useHorses } from "./hooks/useHorses"
+export { useHorses, useCreateHorse, type CreateHorseInput } from "./hooks/useHorses"
 export { useTasks } from "./hooks/useTasks"
 export { useDocuments } from "./hooks/useDocuments"
 

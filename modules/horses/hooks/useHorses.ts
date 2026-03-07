@@ -41,6 +41,51 @@ interface UseHorsesReturn {
   refetch: () => void
 }
 
+// Input type for creating a horse
+export interface CreateHorseInput {
+  name: string
+  breed: string
+  color: string
+  dateOfBirth: string
+  stallId: string | null
+  ownerId: string
+  feedingNotes: string
+  medicalNotes: string
+}
+
+export function useCreateHorse() {
+  const { currentUser } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
+
+  const createHorse = async (input: CreateHorseInput): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser?.stableId) {
+      return { success: false, error: "No stable ID found" }
+    }
+
+    const { error } = await supabase.from("horses").insert({
+      stable_id: currentUser.stableId,
+      name: input.name,
+      breed: input.breed,
+      color: input.color,
+      date_of_birth: input.dateOfBirth,
+      stall_id: input.stallId || null,
+      owner_id: input.ownerId,
+      feeding_notes: input.feedingNotes,
+      medical_notes: input.medicalNotes,
+      is_active: true,
+    })
+
+    if (error) {
+      console.error("Failed to create horse:", error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  }
+
+  return { createHorse }
+}
+
 export function useHorses(): UseHorsesReturn {
   const { currentUser } = useAuth()
   const [horses, setHorses] = useState<Horse[]>([])

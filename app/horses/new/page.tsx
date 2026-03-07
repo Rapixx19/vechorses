@@ -6,23 +6,35 @@
  * DEPENDS ON: modules/horses
  * CONSUMED BY: Next.js routing
  * TESTS: app/horses/new/page.test.tsx
- * LAST CHANGED: 2026-03-06 — Added HorseForm component
+ * LAST CHANGED: 2026-03-07 — Wired to Supabase via useCreateHorse
  */
 
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { HorseForm } from "@/modules/horses"
+import { HorseForm, useCreateHorse, type CreateHorseInput } from "@/modules/horses"
 
 export default function NewHorsePage() {
   const router = useRouter()
+  const { createHorse } = useCreateHorse()
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (data: Parameters<typeof HorseForm>[0] extends { onSubmit: (d: infer T) => void } ? T : never) => {
-    // BREADCRUMB: V1 mock - just log and redirect. Real save comes in Phase 2
-    console.log("New horse:", data)
-    router.push("/horses")
+  const handleSubmit = async (data: CreateHorseInput) => {
+    setError(null)
+    setIsSubmitting(true)
+
+    const result = await createHorse(data)
+
+    if (result.success) {
+      router.push("/horses")
+    } else {
+      setError(result.error || "Failed to create horse")
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -33,8 +45,16 @@ export default function NewHorsePage() {
         </Link>
         <h2 className="text-2xl font-bold text-[var(--text-primary)]">Add New Horse</h2>
       </div>
+      {error && (
+        <div className="p-4 rounded-md bg-red-500/10 border border-red-500/20 text-red-400">
+          {error}
+        </div>
+      )}
       <div className="rounded-lg p-6" style={{ backgroundColor: "#1A1A2E" }}>
         <HorseForm onSubmit={handleSubmit} />
+        {isSubmitting && (
+          <div className="mt-4 text-center text-[var(--text-muted)]">Saving...</div>
+        )}
       </div>
     </div>
   )
