@@ -91,7 +91,7 @@ export function useClients(): UseClientsReturn {
           gdprConsentAt: row.gdpr_consent_at,
           gdprConsentVersion: row.gdpr_consent_version,
           notes: row.notes || "",
-          photoUrl: row.photo_url,
+          photoUrl: row.photo_url ?? undefined,
           isActive: row.is_active ?? true,
           createdAt: row.created_at || "",
         }))

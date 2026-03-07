@@ -6,7 +6,7 @@
  * DEPENDS ON: lib/types.ts, lib/supabase.ts, lib/mock
  * CONSUMED BY: app/layout.tsx, lib/hooks/useAuth.ts
  * TESTS: lib/context/AuthContext.test.tsx
- * LAST CHANGED: 2026-03-07 — Auto-link stable_id when missing from profile
+ * LAST CHANGED: 2026-03-07 — Chrome-compatible auth with timeout fallback
  */
 
 "use client"
@@ -93,7 +93,7 @@ async function fetchUserProfile(
       .from("stables")
       .select("id, stable_name")
       .eq("owner_user_id", userId)
-      .single()
+      .maybeSingle()
 
     if (ownedStable) {
       console.log("Found owned stable, linking to profile:", ownedStable.id)
@@ -112,7 +112,7 @@ async function fetchUserProfile(
       .from("stables")
       .select("stable_name")
       .eq("id", stableId)
-      .single()
+      .maybeSingle()
     stableName = stable?.stable_name
   }
 
@@ -133,35 +133,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
-  // Memoize supabase client to prevent infinite re-renders
-  const supabase = useMemo(() => createClient(), [])
+  // Memoize supabase client with error handling for localStorage issues
+  const supabase = useMemo(() => {
+    try {
+      return createClient()
+    } catch (e) {
+      console.error("Supabase client error:", e)
+      return null
+    }
+  }, [])
 
   // Restore session on mount and listen for auth changes
   useEffect(() => {
-    supabase.auth.getSession().then((response: { data: { session: { user: { id: string; email?: string } } | null } }) => {
-      const session = response.data.session
-      if (session?.user) {
-        fetchUserProfile(supabase, session.user.id, session.user.email).then(setCurrentUser)
-      }
+    if (!supabase) {
       setIsLoading(false)
-    })
+      return
+    }
+
+    // Timeout fallback for Chrome compatibility
+    const timeout = setTimeout(() => {
+      console.warn("Auth session check timed out")
+      setIsLoading(false)
+    }, 5000)
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout)
+        if (session?.user) {
+          fetchUserProfile(supabase, session.user.id, session.user.email)
+            .then(setCurrentUser)
+            .finally(() => setIsLoading(false))
+        } else {
+          setIsLoading(false)
+        }
+      })
+      .catch(() => {
+        clearTimeout(timeout)
+        setIsLoading(false)
+      })
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event: string, session: { user: { id: string; email?: string } } | null) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        const profile = await fetchUserProfile(supabase, session.user.id, session.user.email)
-        setCurrentUser(profile)
-      } else if (event === "SIGNED_OUT") {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchUserProfile(supabase, session.user.id, session.user.email).then(setCurrentUser)
+      } else {
         setCurrentUser(null)
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [supabase])
 
   const login = useCallback(
     async (email: string, password: string) => {
+      if (!supabase) throw new Error("Supabase client not available")
       setIsLoading(true)
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       setIsLoading(false)
@@ -172,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const logout = useCallback(async () => {
+    if (!supabase) return
     await supabase.auth.signOut()
     setCurrentUser(null)
     router.push("/login")
@@ -179,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (fullName: string, email: string, password: string, stableName: string) => {
+      if (!supabase) throw new Error("Supabase client not available")
       setIsLoading(true)
 
       // Step 1: Create auth user
@@ -219,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const joinWithCode = useCallback(
     async (code: string, fullName: string, email: string, password: string) => {
+      if (!supabase) throw new Error("Supabase client not available")
       setIsLoading(true)
 
       // Step 1: Create auth user

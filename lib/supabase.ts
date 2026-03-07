@@ -1,55 +1,47 @@
 /**
  * FILE: lib/supabase.ts
  * ZONE: 🔴 Red — critical infrastructure
- * PURPOSE: Supabase browser client factory with build-time safety
+ * PURPOSE: Supabase browser client factory with Chrome-compatible storage
  * EXPORTS: createClient
- * DEPENDS ON: .env.local, @supabase/ssr
+ * DEPENDS ON: .env.local, @supabase/supabase-js
  * CONSUMED BY: All V2 hooks (client-side), AuthContext
  * TESTS: lib/supabase.test.ts
- * LAST CHANGED: 2026-03-06 — Added debug logging for env var issues
+ * LAST CHANGED: 2026-03-07 — Switched from @supabase/ssr to @supabase/supabase-js for Chrome compatibility
  */
 
-import { createBrowserClient } from "@supabase/ssr"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
-export const createClient = () => {
+// Singleton client instance
+let client: ReturnType<typeof createSupabaseClient> | null = null
+
+export function createClient() {
+  // Return existing client if already initialized
+  if (client) return client
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!url || !key) {
-    // During SSR/static build, return mock client
-    // At runtime, this should never happen if env vars are set correctly
+  // During SSR/static build or if env vars missing, return placeholder client
+  if (!url || !key || url === "https://placeholder.supabase.co") {
     if (typeof window !== "undefined") {
       console.error("MISSING SUPABASE ENV VARS - check Vercel environment variables", {
         url: !!url,
         key: !!key,
       })
     }
-
-    // Return mock client that won't crash but will fail auth operations
-    return {
-      auth: {
-        getSession: async () => ({ data: { session: null }, error: null }),
-        getUser: async () => ({ data: { user: null }, error: null }),
-        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-        signInWithPassword: async () => ({
-          data: { user: null, session: null },
-          error: { message: "Supabase not configured - check environment variables" },
-        }),
-        signUp: async () => ({
-          data: { user: null, session: null },
-          error: { message: "Supabase not configured - check environment variables" },
-        }),
-        signOut: async () => ({ error: null }),
-      },
-      from: () => ({
-        select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
-        insert: () => ({ select: () => ({ single: async () => ({ data: null, error: null }) }) }),
-        update: () => ({ eq: async () => ({ data: null, error: null }) }),
-        upsert: async () => ({ error: null }),
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any
+    return createSupabaseClient("https://placeholder.supabase.co", "placeholder-key")
   }
 
-  return createBrowserClient(url, key)
+  // Create client with Chrome-compatible auth settings
+  client = createSupabaseClient(url, key, {
+    auth: {
+      persistSession: true,
+      storageKey: "vechorses-auth",
+      storage: typeof window !== "undefined" ? window.localStorage : undefined,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  })
+
+  return client
 }
