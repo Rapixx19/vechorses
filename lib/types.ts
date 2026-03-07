@@ -68,9 +68,12 @@ export interface ClientDocument {
   notes?: string
 }
 
+export type StallType = "standard" | "large" | "paddock"
+
 export interface Stall {
   id: string
   label: string
+  type: StallType
   horseId: string | null
   notes: string
 }

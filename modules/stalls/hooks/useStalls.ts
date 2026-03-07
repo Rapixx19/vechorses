@@ -1,12 +1,12 @@
 /**
  * FILE: modules/stalls/hooks/useStalls.ts
  * ZONE: Yellow
- * PURPOSE: Hook to fetch all stalls from Supabase
- * EXPORTS: useStalls
+ * PURPOSE: Hook to fetch all stalls from Supabase and add new stalls
+ * EXPORTS: useStalls, useAddStall
  * DEPENDS ON: lib/supabase.ts, lib/types.ts, lib/hooks/useAuth.ts
  * CONSUMED BY: modules/stalls/components/*, app/stalls/*
  * TESTS: modules/stalls/tests/useStalls.test.ts
- * LAST CHANGED: 2026-03-07 — V2: Wired to Supabase with stable_id filter
+ * LAST CHANGED: 2026-03-07 — Added useAddStall hook and type column support
  */
 
 "use client"
@@ -14,7 +14,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
-import type { Stall } from "@/lib/types"
+import type { Stall, StallType } from "@/lib/types"
 
 interface UseStallsReturn {
   stalls: Stall[]
@@ -28,8 +28,16 @@ interface StallRow {
   id: string
   stable_id: string | null
   label: string
+  type: string | null
   notes: string | null
   created_at: string | null
+}
+
+// Input type for adding a stall
+export interface AddStallInput {
+  label: string
+  type?: string
+  notes?: string
 }
 
 export function useStalls(): UseStallsReturn {
@@ -76,6 +84,7 @@ export function useStalls(): UseStallsReturn {
         const mapped: Stall[] = (data || []).map((row: StallRow & { horses?: { id: string }[] }) => ({
           id: row.id,
           label: row.label,
+          type: (row.type as StallType) || "standard",
           horseId: row.horses?.[0]?.id || null,
           notes: row.notes || "",
         }))
@@ -91,4 +100,32 @@ export function useStalls(): UseStallsReturn {
   const refetch = () => setRefetchTrigger((n) => n + 1)
 
   return { stalls, isLoading, error, refetch }
+}
+
+export function useAddStall() {
+  const { currentUser } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
+
+  const addStall = async (stall: AddStallInput): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser?.stableId) {
+      console.error("addStall: no stableId")
+      return { success: false, error: "No stable ID found" }
+    }
+
+    const { error } = await supabase.from("stalls").insert({
+      stable_id: currentUser.stableId,
+      label: stall.label,
+      type: stall.type || "standard",
+      notes: stall.notes || null,
+    })
+
+    if (error) {
+      console.error("addStall error:", JSON.stringify(error))
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  }
+
+  return { addStall }
 }
