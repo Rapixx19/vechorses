@@ -6,16 +6,17 @@
  * DEPENDS ON: useStalls, useHorses, useClients, useStableLayout, FloorPlanCanvas, etc.
  * CONSUMED BY: app/stalls/page.tsx
  * TESTS: modules/stalls/tests/StallGrid.test.tsx
- * LAST CHANGED: 2026-03-07 — Complete rewrite for modular floor plan builder
+ * LAST CHANGED: 2026-03-07 — UI overhaul with skeleton loading
  */
 
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Settings, Grid, List, Loader2 } from "lucide-react"
+import { Settings, Grid, List, Grid3X3 } from "lucide-react"
 import { useStalls, useAddStall, useUpdateStall, useDeleteStall } from "@/modules/stalls"
 import { useHorses } from "@/modules/horses"
 import { useClients } from "@/modules/clients"
+import { Skeleton } from "@/modules/dashboard"
 import { useStableLayout } from "../hooks/useStableLayout"
 import { FloorPlanCanvas } from "./FloorPlanCanvas"
 import { FloorPlanView } from "./FloorPlanView"
@@ -38,6 +39,27 @@ function useIsMobile() {
     return () => window.removeEventListener("resize", check)
   }, [])
   return isMobile
+}
+
+// BREADCRUMB: Skeleton loading state for StallGrid
+function StallGridSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="h-10 w-28" />
+      </div>
+      <div className="card p-4 grid grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i}>
+            <Skeleton className="h-8 w-12 mb-1" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-[400px]" />
+    </div>
+  )
 }
 
 export function StallGrid() {
@@ -64,10 +86,8 @@ export function StallGrid() {
       if (savedLayout) {
         setLocalLayout(savedLayout)
       } else if (stalls.length > 0) {
-        // Auto-generate layout from existing stalls
         setLocalLayout(generateDefaultLayout(stalls))
       } else {
-        // Empty default layout
         setLocalLayout({ rows: 8, cols: 10, cells: [] })
       }
     }
@@ -95,11 +115,9 @@ export function StallGrid() {
 
     setIsSaving(true)
 
-    // Save layout JSON to stables table
     const layoutSaved = await saveLayout(localLayout)
 
     if (layoutSaved) {
-      // Sync stall positions to stalls table
       const stallCells = localLayout.cells.filter((c) => c.type === "stall" && c.stallId)
       const positionUpdates = stallCells.map((cell) => ({
         id: cell.stallId!,
@@ -112,7 +130,6 @@ export function StallGrid() {
         await updateStallPositions(positionUpdates)
       }
 
-      // Create new stalls for cells without stallId
       const newStallCells = localLayout.cells.filter((c) => c.type === "stall" && !c.stallId)
       for (const cell of newStallCells) {
         const result = await addStall({
@@ -123,12 +140,10 @@ export function StallGrid() {
           colIndex: cell.col,
         })
         if (result.success && result.id) {
-          // Update cell with new stallId
           cell.stallId = result.id
         }
       }
 
-      // Save layout again with stallIds
       await saveLayout(localLayout)
       refetch()
     }
@@ -147,7 +162,6 @@ export function StallGrid() {
   const handleAssign = async (_horseId: string) => {
     if (sheetState?.type === "assign") {
       await updateStall(sheetState.stall.id, {})
-      // TODO: Update horse's stallId in horses table
       refetch()
       setSheetState(null)
     }
@@ -156,18 +170,13 @@ export function StallGrid() {
   // BREADCRUMB: Handle unassign horse
   const handleUnassign = () => {
     if (sheetState?.type === "detail") {
-      // TODO: Update horse's stallId to null in horses table
       refetch()
       setSheetState(null)
     }
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#2C5F2E]" />
-      </div>
-    )
+    return <StallGridSkeleton />
   }
 
   // Mobile view
@@ -179,7 +188,7 @@ export function StallGrid() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538]"
+              className="btn btn-secondary"
             >
               {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
             </button>
@@ -216,16 +225,33 @@ export function StallGrid() {
     )
   }
 
+  // Empty state
+  if (stalls.length === 0 && !localLayout?.cells.length) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Stalls</h2>
+        </div>
+        <div className="empty-state card">
+          <Grid3X3 className="h-12 w-12 text-[var(--text-muted)] mb-3" />
+          <p className="text-[var(--text-primary)] font-medium mb-2">No stalls configured</p>
+          <p className="text-sm text-[var(--text-muted)] mb-4">Set up your stable layout to manage stall assignments</p>
+          <button onClick={() => setIsEditMode(true)} className="btn btn-primary">
+            <Settings className="h-4 w-4" />
+            Configure Layout
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-[var(--text-primary)]">Stalls</h2>
         {!isEditMode && (
-          <button
-            onClick={() => setIsEditMode(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538]"
-          >
+          <button onClick={() => setIsEditMode(true)} className="btn btn-secondary">
             <Settings className="h-4 w-4" />
             Edit Layout
           </button>

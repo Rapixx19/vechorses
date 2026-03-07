@@ -227,7 +227,7 @@ export interface Service {
 
 // Auth & Team Management
 export type UserRole = "owner" | "manager" | "staff" | "custom"
-export type ModuleName = "dashboard" | "horses" | "clients" | "stalls" | "billing" | "services" | "settings" | "staff" | "calendar"
+export type ModuleName = "dashboard" | "horses" | "clients" | "stalls" | "billing" | "services" | "settings" | "staff" | "calendar" | "documents"
 
 export interface ModulePermission {
   module: ModuleName

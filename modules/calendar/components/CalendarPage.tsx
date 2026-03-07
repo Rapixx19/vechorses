@@ -3,19 +3,20 @@
  * ZONE: Green
  * PURPOSE: Main calendar page with views, events, staff filtering, and week overview
  * EXPORTS: CalendarPage
- * DEPENDS ON: useCalendar, useHorses, useStaff, CalendarView, EventForm, EventDetail, StaffFilterBar, WeekOverview
+ * DEPENDS ON: useCalendar, useHorses, useStaff, CalendarView, EventForm, EventDetail, StaffFilterBar, WeekOverview, Skeleton
  * CONSUMED BY: app/calendar/page.tsx
  * TESTS: modules/calendar/tests/CalendarPage.test.tsx
- * LAST CHANGED: 2026-03-07 — Added staff filter bar and week overview
+ * LAST CHANGED: 2026-03-07 — UI overhaul with skeleton loading
  */
 
 "use client"
 
 import { useState, useMemo } from "react"
-import { Plus, Loader2, ClipboardList } from "lucide-react"
+import { Plus, ClipboardList, Calendar } from "lucide-react"
 import { useCalendar } from "../hooks/useCalendar"
 import { useHorses } from "@/modules/horses"
 import { useStaff, useStaffTasks, TaskAssignSheet } from "@/modules/staff"
+import { Skeleton } from "@/modules/dashboard"
 import { useAuth } from "@/lib/hooks/useAuth"
 import { CalendarView } from "./CalendarView"
 import { EventForm } from "./EventForm"
@@ -29,6 +30,29 @@ type ModalState =
   | { type: "detail"; event: CalendarEvent }
   | { type: "task"; staffId: string; staffName: string; date: Date }
   | null
+
+// BREADCRUMB: Skeleton loading state for CalendarPage
+function CalendarPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <Skeleton className="h-8 w-24" />
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-56" />
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-28" />
+        </div>
+      </div>
+      <Skeleton className="h-12 w-full" />
+      <div className="flex flex-wrap gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-5 w-20" />
+        ))}
+      </div>
+      <Skeleton className="h-[500px]" />
+    </div>
+  )
+}
 
 export function CalendarPage() {
   const { currentUser } = useAuth()
@@ -112,11 +136,7 @@ export function CalendarPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#2C5F2E]" />
-      </div>
-    )
+    return <CalendarPageSkeleton />
   }
 
   return (
@@ -127,15 +147,15 @@ export function CalendarPage() {
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* View Mode Toggle */}
-          <div className="flex rounded-lg overflow-hidden" style={{ backgroundColor: "#1A1A2E" }}>
+          <div className="flex rounded-lg overflow-hidden bg-[var(--bg-surface)] border border-[var(--border)]">
             {(["month", "week", "day"] as CalendarViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => { setViewMode(mode); setShowWeekOverview(false) }}
-                className={`px-4 py-2 text-sm font-medium capitalize ${
+                className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
                   viewMode === mode && !showWeekOverview
-                    ? "bg-green-600 text-white"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-[var(--green-primary)] text-white"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 {mode}
@@ -143,10 +163,10 @@ export function CalendarPage() {
             ))}
             <button
               onClick={() => setShowWeekOverview(!showWeekOverview)}
-              className={`px-4 py-2 text-sm font-medium flex items-center gap-1 ${
+              className={`px-4 py-2 text-sm font-medium flex items-center gap-1 transition-colors ${
                 showWeekOverview
-                  ? "bg-green-600 text-white"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-[var(--green-primary)] text-white"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
               <ClipboardList className="h-4 w-4" />
@@ -155,28 +175,18 @@ export function CalendarPage() {
           </div>
 
           {/* Integration Buttons */}
-          <button
-            onClick={showComingSoon}
-            className="px-3 py-2 rounded-md text-sm bg-[#1A1A2E] text-gray-400 hover:text-white flex items-center gap-2"
-          >
-            <span>📅</span>
+          <button onClick={showComingSoon} className="btn btn-ghost">
+            <Calendar className="h-4 w-4" />
             Connect Google
           </button>
-          <button
-            onClick={showComingSoon}
-            className="px-3 py-2 rounded-md text-sm bg-[#1A1A2E] text-gray-400 hover:text-white flex items-center gap-2"
-          >
-            <span>📅</span>
+          <button onClick={showComingSoon} className="btn btn-ghost">
+            <Calendar className="h-4 w-4" />
             Connect Outlook
           </button>
 
           {/* Add Event Button */}
           {canEdit && (
-            <button
-              onClick={handleAddEvent}
-              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
-              style={{ backgroundColor: "#2C5F2E" }}
-            >
+            <button onClick={handleAddEvent} className="btn btn-primary">
               <Plus className="h-4 w-4" />
               Add Event
             </button>
@@ -186,8 +196,8 @@ export function CalendarPage() {
 
       {/* Staff Filter Bar */}
       {staff.length > 0 && (
-        <div className="p-3 rounded-lg" style={{ backgroundColor: "#1A1A2E" }}>
-          <p className="text-xs text-gray-500 mb-2">Filter by staff member</p>
+        <div className="card p-3">
+          <p className="text-xs text-[var(--text-muted)] mb-2">Filter by staff member</p>
           <StaffFilterBar
             staff={staff}
             selectedStaffId={selectedStaffId}
@@ -200,21 +210,18 @@ export function CalendarPage() {
       {!showWeekOverview && (
         <div className="flex flex-wrap gap-3 text-xs">
           {[
-            { label: "General", color: "#2C5F2E" },
-            { label: "Vet", color: "#ef4444" },
+            { label: "General", color: "var(--green-primary)" },
+            { label: "Vet", color: "var(--red)" },
             { label: "Farrier", color: "#f97316" },
-            { label: "Competition", color: "#3b82f6" },
-            { label: "Training", color: "#8b5cf6" },
-            { label: "Feeding", color: "#eab308" },
+            { label: "Competition", color: "var(--blue)" },
+            { label: "Training", color: "var(--purple)" },
+            { label: "Feeding", color: "var(--yellow)" },
             { label: "Vacation", color: "#14b8a6" },
             { label: "Meeting", color: "#6366f1" },
           ].map((cat) => (
             <div key={cat.label} className="flex items-center gap-1">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: cat.color }}
-              />
-              <span className="text-gray-400">{cat.label}</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+              <span className="text-[var(--text-muted)]">{cat.label}</span>
             </div>
           ))}
         </div>

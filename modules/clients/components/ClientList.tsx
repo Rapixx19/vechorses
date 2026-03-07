@@ -3,21 +3,40 @@
  * ZONE: Green
  * PURPOSE: Searchable list of all clients with add button
  * EXPORTS: ClientList
- * DEPENDS ON: useClients, useHorses, useBilling, ClientCard
+ * DEPENDS ON: useClients, useHorses, useBilling, ClientCard, Skeleton
  * CONSUMED BY: app/clients/page.tsx
  * TESTS: modules/clients/tests/ClientList.test.tsx
- * LAST CHANGED: 2026-03-07 — V2: Updated useBilling hook for Supabase integration
+ * LAST CHANGED: 2026-03-07 — UI overhaul with skeleton loading
  */
 
 "use client"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, Users } from "lucide-react"
 import { useClients } from "@/modules/clients"
 import { useHorses } from "@/modules/horses"
 import { useBilling } from "@/modules/billing"
+import { Skeleton } from "@/modules/dashboard"
 import { ClientCard } from "./ClientCard"
+
+// BREADCRUMB: Skeleton loading state for ClientList
+function ClientListSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-20" />
+        <Skeleton className="h-10 w-28" />
+      </div>
+      <Skeleton className="h-10 w-full" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function ClientList() {
   const [search, setSearch] = useState("")
@@ -34,12 +53,9 @@ export function ClientList() {
   const activeClients = clients.filter((c) => c.isActive)
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
-      </div>
-    )
+    return <ClientListSkeleton />
   }
+
   const filteredClients = activeClients.filter(
     (client) =>
       client.fullName.toLowerCase().includes(search.toLowerCase()) ||
@@ -51,11 +67,7 @@ export function ClientList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-[var(--text-muted)]">{activeClients.length} clients</p>
-        <Link
-          href="/clients/new"
-          className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
-          style={{ backgroundColor: "#2C5F2E" }}
-        >
+        <Link href="/clients/new" className="btn btn-primary">
           <Plus className="h-4 w-4" />
           Add Client
         </Link>
@@ -69,7 +81,7 @@ export function ClientList() {
           placeholder="Search by name or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 rounded-md bg-[#1A1A2E] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
+          className="input pl-10"
         />
       </div>
 
@@ -80,15 +92,13 @@ export function ClientList() {
         ))}
       </div>
 
+      {/* Empty state */}
       {filteredClients.length === 0 && activeClients.length === 0 && (
-        <div className="text-center py-12 rounded-lg" style={{ backgroundColor: "#1A1A2E" }}>
+        <div className="empty-state card">
+          <Users className="h-12 w-12 text-[var(--text-muted)] mb-3" />
           <p className="text-[var(--text-primary)] font-medium mb-2">No clients yet</p>
           <p className="text-sm text-[var(--text-muted)] mb-4">Add your first client to start managing horse owners</p>
-          <Link
-            href="/clients/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
-            style={{ backgroundColor: "#2C5F2E" }}
-          >
+          <Link href="/clients/new" className="btn btn-primary">
             <Plus className="h-4 w-4" />
             Add your first client
           </Link>

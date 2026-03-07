@@ -3,21 +3,40 @@
  * ZONE: Green
  * PURPOSE: Searchable list of all horses with add button
  * EXPORTS: HorseList
- * DEPENDS ON: useHorses, useTasks, useClients, useStalls, HorseCard
+ * DEPENDS ON: useHorses, useTasks, useClients, useStalls, HorseCard, Skeleton
  * CONSUMED BY: app/horses/page.tsx
  * TESTS: modules/horses/tests/HorseList.test.tsx
- * LAST CHANGED: 2026-03-06 — Added pending task count to cards
+ * LAST CHANGED: 2026-03-07 — UI overhaul with skeleton loading
  */
 
 "use client"
 
 import { useState } from "react"
 import Link from "next/link"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, Rabbit } from "lucide-react"
 import { useHorses, useTasks } from "@/modules/horses"
 import { useClients } from "@/modules/clients"
 import { useStalls } from "@/modules/stalls"
+import { Skeleton } from "@/modules/dashboard"
 import { HorseCard } from "./HorseCard"
+
+// BREADCRUMB: Skeleton loading state for HorseList
+function HorseListSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-20" />
+        <Skeleton className="h-10 w-28" />
+      </div>
+      <Skeleton className="h-10 w-full" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-40" />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function HorseList() {
   const [search, setSearch] = useState("")
@@ -45,11 +64,7 @@ export function HorseList() {
   )
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
-      </div>
-    )
+    return <HorseListSkeleton />
   }
 
   return (
@@ -57,11 +72,7 @@ export function HorseList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-[var(--text-muted)]">{horses.length} horses</p>
-        <Link
-          href="/horses/new"
-          className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
-          style={{ backgroundColor: "#2C5F2E" }}
-        >
+        <Link href="/horses/new" className="btn btn-primary">
           <Plus className="h-4 w-4" />
           Add Horse
         </Link>
@@ -75,7 +86,7 @@ export function HorseList() {
           placeholder="Search by name or breed..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 rounded-md bg-[#1A1A2E] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
+          className="input pl-10"
         />
       </div>
 
@@ -92,15 +103,13 @@ export function HorseList() {
         ))}
       </div>
 
+      {/* Empty state */}
       {filteredHorses.length === 0 && horses.length === 0 && (
-        <div className="text-center py-12 rounded-lg" style={{ backgroundColor: "#1A1A2E" }}>
+        <div className="empty-state card">
+          <Rabbit className="h-12 w-12 text-[var(--text-muted)] mb-3" />
           <p className="text-[var(--text-primary)] font-medium mb-2">No horses yet</p>
           <p className="text-sm text-[var(--text-muted)] mb-4">Add your first horse to get started</p>
-          <Link
-            href="/horses/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
-            style={{ backgroundColor: "#2C5F2E" }}
-          >
+          <Link href="/horses/new" className="btn btn-primary">
             <Plus className="h-4 w-4" />
             Add your first horse
           </Link>

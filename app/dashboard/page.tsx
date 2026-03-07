@@ -1,16 +1,17 @@
 /**
  * FILE: app/dashboard/page.tsx
  * ZONE: Green
- * PURPOSE: Lively dashboard page with animations, status banner, and widgets
+ * PURPOSE: Dashboard page with loading timeout, error handling, and widgets
  * EXPORTS: default (DashboardPage)
  * DEPENDS ON: modules/dashboard, modules/horses, modules/clients, modules/stalls, modules/billing, modules/staff, modules/calendar
  * CONSUMED BY: Next.js routing
  * TESTS: app/dashboard/page.test.tsx
- * LAST CHANGED: 2026-03-07 — Redesigned with lively dashboard components
+ * LAST CHANGED: 2026-03-07 — Fixed infinite loading, added timeout fallback
  */
 
 "use client"
 
+import { useState, useEffect, useMemo } from "react"
 import { Rabbit, ListTodo, Grid3X3, Receipt } from "lucide-react"
 import { useHorses, useTasks } from "@/modules/horses"
 import { useClients } from "@/modules/clients"
@@ -27,9 +28,29 @@ import {
   StaffStatusWidget,
   HorsesGlance,
   RecentActivityFeed,
+  Skeleton,
 } from "@/modules/dashboard"
 
+// BREADCRUMB: Loading timeout in milliseconds - show content after this even if loading
+const LOADING_TIMEOUT = 5000
+
 export default function DashboardPage() {
+  const [timedOut, setTimedOut] = useState(false)
+
+  // BREADCRUMB: Memoize date objects to prevent infinite re-renders
+  const { today, todayStr, dateRange } = useMemo(() => {
+    const now = new Date()
+    return {
+      today: now,
+      todayStr: now.toISOString().split("T")[0],
+      dateRange: {
+        startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+        endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1),
+      },
+    }
+  }, [])
+
+  // All hooks at top level - no conditional calls
   const { horses, isLoading: horsesLoading } = useHorses()
   const { clients, isLoading: clientsLoading } = useClients()
   const { stalls, isLoading: stallsLoading } = useStalls()
@@ -37,27 +58,28 @@ export default function DashboardPage() {
   const { items: billingItems, isLoading: billingLoading } = useBilling()
   const { staff, isLoading: staffLoading } = useStaff()
   const { tasks: staffTasks, isLoading: staffTasksLoading } = useStaffTasks()
-
-  // BREADCRUMB: Fetch today's calendar events for schedule widget
-  const today = new Date()
-  const todayStr = today.toISOString().split("T")[0]
-  const { events, isLoading: eventsLoading } = useCalendar({
-    startDate: today,
-    endDate: new Date(today.getTime() + 86400000),
-  })
-
-  // Time of day theming
+  const { events, isLoading: eventsLoading } = useCalendar(dateRange)
   const { greeting, colors } = useTimeOfDay()
 
+  // BREADCRUMB: Timeout fallback - show content after 5 seconds even if still loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTimedOut(true)
+    }, LOADING_TIMEOUT)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   const isLoading =
-    horsesLoading ||
-    clientsLoading ||
-    stallsLoading ||
-    tasksLoading ||
-    billingLoading ||
-    staffLoading ||
-    staffTasksLoading ||
-    eventsLoading
+    !timedOut &&
+    (horsesLoading ||
+      clientsLoading ||
+      stallsLoading ||
+      tasksLoading ||
+      billingLoading ||
+      staffLoading ||
+      staffTasksLoading ||
+      eventsLoading)
 
   const formattedDate = today.toLocaleDateString("en-GB", {
     weekday: "long",
@@ -66,18 +88,25 @@ export default function DashboardPage() {
     year: "numeric",
   })
 
-  // Calculate stats
-  const todaysTasks = tasks.filter((t) => t.dueDate === todayStr && !t.completedAt)
-  const completedTodayTasks = tasks.filter((t) => t.dueDate === todayStr && t.completedAt)
-  const overdueTasks = tasks.filter((t) => t.dueDate < todayStr && !t.completedAt)
-  const occupiedStalls = stalls.filter((s) => s.horseId !== null).length
-  const pendingBillingCents = billingItems
+  // Calculate stats with safe defaults
+  const safeHorses = horses || []
+  const safeTasks = tasks || []
+  const safeStalls = stalls || []
+  const safeBillingItems = billingItems || []
+  const safeStaff = staff || []
+  const safeStaffTasks = staffTasks || []
+  const safeEvents = events || []
+  const safeClients = clients || []
+
+  const todaysTasks = safeTasks.filter((t) => t.dueDate === todayStr && !t.completedAt)
+  const completedTodayTasks = safeTasks.filter((t) => t.dueDate === todayStr && t.completedAt)
+  const overdueTasks = safeTasks.filter((t) => t.dueDate < todayStr && !t.completedAt)
+  const occupiedStalls = safeStalls.filter((s) => s.horseId !== null).length
+  const pendingBillingCents = safeBillingItems
     .filter((b) => b.status === "pending")
     .reduce((sum, b) => sum + b.amountCents, 0)
-  const pendingInvoices = billingItems.filter((b) => b.status === "pending").length
-
-  // Low occupancy threshold
-  const lowOccupancy = stalls.length > 0 && occupiedStalls / stalls.length < 0.5
+  const pendingInvoices = safeBillingItems.filter((b) => b.status === "pending").length
+  const lowOccupancy = safeStalls.length > 0 && occupiedStalls / safeStalls.length < 0.5
 
   const handleGenerateInvoice = async () => {
     try {
@@ -93,10 +122,30 @@ export default function DashboardPage() {
     }
   }
 
+  // Show skeleton loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: colors.accent }} />
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-7 w-40 mb-2" />
+          <Skeleton className="h-4 w-56" />
+        </div>
+        <Skeleton className="h-12 w-full" />
+        <div className="flex gap-2">
+          <Skeleton className="h-10 w-28" />
+          <Skeleton className="h-10 w-28" />
+          <Skeleton className="h-10 w-28" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Skeleton className="h-28" />
+          <Skeleton className="h-28" />
+          <Skeleton className="h-28" />
+          <Skeleton className="h-28" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Skeleton className="h-48" />
+          <Skeleton className="h-48" />
+        </div>
       </div>
     )
   }
@@ -125,7 +174,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <AnimatedStatCard
           title="Active Horses"
-          value={horses.filter((h) => h.isActive).length}
+          value={safeHorses.filter((h) => h.isActive).length}
           icon={Rabbit}
           delay={0}
           variant="horses"
@@ -146,7 +195,7 @@ export default function DashboardPage() {
           icon={Grid3X3}
           delay={2}
           variant="occupancy"
-          extra={{ occupied: occupiedStalls, total: stalls.length }}
+          extra={{ occupied: occupiedStalls, total: safeStalls.length }}
           accentColor={colors.accent}
         />
         <AnimatedStatCard
@@ -162,21 +211,21 @@ export default function DashboardPage() {
 
       {/* Two Column Layout - Schedule and Staff */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <TodaysSchedule events={events} />
-        <StaffStatusWidget staff={staff} />
+        <TodaysSchedule events={safeEvents} />
+        <StaffStatusWidget staff={safeStaff} />
       </div>
 
       {/* Horses at a Glance */}
-      <HorsesGlance horses={horses} clients={clients} stalls={stalls} tasks={tasks} />
+      <HorsesGlance horses={safeHorses} clients={safeClients} stalls={safeStalls} tasks={safeTasks} />
 
       {/* Recent Activity */}
       <RecentActivityFeed
-        horses={horses}
-        clients={clients}
-        billingItems={billingItems}
-        tasks={tasks}
-        events={events}
-        staffTasks={staffTasks}
+        horses={safeHorses}
+        clients={safeClients}
+        billingItems={safeBillingItems}
+        tasks={safeTasks}
+        events={safeEvents}
+        staffTasks={safeStaffTasks}
       />
     </div>
   )

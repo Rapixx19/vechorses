@@ -3,18 +3,19 @@
  * ZONE: Green
  * PURPOSE: Main staff management page with grid, stats, and modals
  * EXPORTS: StaffPage
- * DEPENDS ON: useStaff, useHorses, StaffCard, StaffDetail, StaffForm, TaskAssignSheet
+ * DEPENDS ON: useStaff, useHorses, StaffCard, StaffDetail, StaffForm, TaskAssignSheet, Skeleton
  * CONSUMED BY: app/staff/page.tsx
  * TESTS: modules/staff/tests/StaffPage.test.tsx
- * LAST CHANGED: 2026-03-07 — Initial creation for staff management
+ * LAST CHANGED: 2026-03-07 — UI overhaul with skeleton loading
  */
 
 "use client"
 
 import { useState } from "react"
-import { UserPlus, Loader2 } from "lucide-react"
+import { UserPlus, Users2 } from "lucide-react"
 import { useStaff, useUpdateStaff } from "../hooks/useStaff"
 import { useHorses } from "@/modules/horses"
+import { Skeleton } from "@/modules/dashboard"
 import { StaffCard } from "./StaffCard"
 import { StaffDetail } from "./StaffDetail"
 import { StaffForm } from "./StaffForm"
@@ -26,6 +27,31 @@ type ModalState =
   | { type: "form"; member?: StaffMember }
   | { type: "assign-task"; member: StaffMember }
   | null
+
+// BREADCRUMB: Skeleton loading state for StaffPage
+function StaffPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-10 w-36" />
+      </div>
+      <div className="card p-4 grid grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i}>
+            <Skeleton className="h-8 w-12 mb-1" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-36" />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function StaffPage() {
   const { staff, isLoading, refetch } = useStaff()
@@ -45,11 +71,7 @@ export function StaffPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#2C5F2E]" />
-      </div>
-    )
+    return <StaffPageSkeleton />
   }
 
   return (
@@ -57,53 +79,49 @@ export function StaffPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Staff</h1>
-        <button
-          onClick={() => setModalState({ type: "form" })}
-          className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
-          style={{ backgroundColor: "#2C5F2E" }}
-        >
+        <button onClick={() => setModalState({ type: "form" })} className="btn btn-primary">
           <UserPlus className="h-4 w-4" />
           Add Staff Member
         </button>
       </div>
 
       {/* Stats Bar */}
-      <div className="rounded-lg p-4 grid grid-cols-4 gap-4" style={{ backgroundColor: "#1A1A2E" }}>
+      <div className="card p-4 grid grid-cols-4 gap-4">
         <div>
-          <p className="text-2xl font-bold text-white">{totalStaff}</p>
-          <p className="text-sm text-gray-400">Total Staff</p>
+          <p className="text-2xl font-bold text-[var(--text-primary)]">{totalStaff}</p>
+          <p className="text-sm text-[var(--text-muted)]">Total Staff</p>
         </div>
         <div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500" />
-            <p className="text-2xl font-bold text-white">{workingNow}</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]">{workingNow}</p>
           </div>
-          <p className="text-sm text-gray-400">Working Now</p>
+          <p className="text-sm text-[var(--text-muted)]">Working Now</p>
         </div>
         <div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-yellow-500" />
-            <p className="text-2xl font-bold text-white">{onVacation}</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]">{onVacation}</p>
           </div>
-          <p className="text-sm text-gray-400">On Vacation</p>
+          <p className="text-sm text-[var(--text-muted)]">On Vacation</p>
         </div>
         <div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-gray-500" />
-            <p className="text-2xl font-bold text-white">{dayOff}</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]">{dayOff}</p>
           </div>
-          <p className="text-sm text-gray-400">Day Off</p>
+          <p className="text-sm text-[var(--text-muted)]">Day Off</p>
         </div>
       </div>
 
       {/* Staff Grid */}
       {staff.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-400 mb-2">No staff members yet</p>
-          <button
-            onClick={() => setModalState({ type: "form" })}
-            className="text-sm text-green-400 hover:underline"
-          >
+        <div className="empty-state card">
+          <Users2 className="h-12 w-12 text-[var(--text-muted)] mb-3" />
+          <p className="text-[var(--text-primary)] font-medium mb-2">No staff members yet</p>
+          <p className="text-sm text-[var(--text-muted)] mb-4">Add your first team member to get started</p>
+          <button onClick={() => setModalState({ type: "form" })} className="btn btn-primary">
+            <UserPlus className="h-4 w-4" />
             Add your first staff member
           </button>
         </div>

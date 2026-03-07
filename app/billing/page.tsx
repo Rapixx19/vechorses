@@ -92,8 +92,23 @@ export default function BillingPage() {
 
   if (clientsLoading || billingLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="animate-pulse rounded-lg bg-[#1A1D24] h-8 w-24" style={{ background: "linear-gradient(90deg, #1A1D24 25%, #21252E 50%, #1A1D24 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+          <div className="flex items-center gap-2">
+            <div className="animate-pulse rounded-lg bg-[#1A1D24] h-10 w-32" style={{ background: "linear-gradient(90deg, #1A1D24 25%, #21252E 50%, #1A1D24 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+            <div className="animate-pulse rounded-lg bg-[#1A1D24] h-10 w-36" style={{ background: "linear-gradient(90deg, #1A1D24 25%, #21252E 50%, #1A1D24 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+            <div className="animate-pulse rounded-lg bg-[#1A1D24] h-10 w-28" style={{ background: "linear-gradient(90deg, #1A1D24 25%, #21252E 50%, #1A1D24 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+          </div>
+        </div>
+        <div className="animate-pulse rounded-lg bg-[#1A1D24] h-24 w-full" style={{ background: "linear-gradient(90deg, #1A1D24 25%, #21252E 50%, #1A1D24 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+        <div className="animate-pulse rounded-lg bg-[#1A1D24] h-32 w-full" style={{ background: "linear-gradient(90deg, #1A1D24 25%, #21252E 50%, #1A1D24 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+        <div className="animate-pulse rounded-lg bg-[#1A1D24] h-12 w-full" style={{ background: "linear-gradient(90deg, #1A1D24 25%, #21252E 50%, #1A1D24 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-lg bg-[#1A1D24] h-40" style={{ background: "linear-gradient(90deg, #1A1D24 25%, #21252E 50%, #1A1D24 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }} />
+          ))}
+        </div>
       </div>
     )
   }
