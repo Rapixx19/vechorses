@@ -6,21 +6,23 @@
  * DEPENDS ON: lib/types.ts, lucide-react
  * CONSUMED BY: ServiceGrid
  * TESTS: modules/services/tests/PdfImporter.test.tsx
- * LAST CHANGED: 2026-03-07 — Improved Claude API prompts for multi-language support
+ * LAST CHANGED: 2026-03-07 — Improved for Italian/Swiss price lists with irregular formatting
  */
 
 "use client"
 
 import { useState, useCallback } from "react"
-import { X, Upload, Loader2, CheckCircle, Trash2, Edit2, Globe, AlertCircle } from "lucide-react"
+import { X, Upload, Loader2, CheckCircle, Trash2, Edit2, Globe, AlertCircle, Coins } from "lucide-react"
 import type { Service, ServiceCategory, ServiceUnit } from "@/lib/types"
 
-type ExtractedService = Omit<Service, "id" | "createdAt"> & { originalName?: string }
+type ExtractedService = Omit<Service, "id" | "createdAt"> & { originalName?: string; vatRate?: number }
 
 interface ExtractionResult {
   services: ExtractedService[]
   detectedLanguage: string
+  detectedCurrency: string
   confidence: "high" | "medium" | "low"
+  rawResponse?: string
 }
 
 interface PdfImporterProps {
@@ -28,55 +30,77 @@ interface PdfImporterProps {
   onImport: (services: Omit<Service, "id" | "createdAt">[]) => void
 }
 
-// BREADCRUMB: System prompt for Claude API - handles multi-language extraction
-const SYSTEM_PROMPT = `You are an expert at extracting service/product listings from documents in ANY language (Italian, German, French, Spanish, English, etc.).
+// BREADCRUMB: System prompt for Claude API - handles Italian/Swiss/German stable documents
+const SYSTEM_PROMPT = `You are an expert at extracting service price lists from horse stable documents. Documents may be in Italian, German, French, Spanish, or English.
 
-Your job is to extract ALL services, treatments, lessons, or products from the provided document and return them as structured JSON.
+EXTRACTION RULES:
+1. Extract EVERY service/product line item
+2. Handle Swiss number format: 1'365.00 → 136500 (cents)
+3. Handle European format: 1.365,00 → 136500 (cents)
+4. Handle standard format: 1365.00 → 136500 (cents)
+5. All prices stored as INTEGER CENTS
+6. If price says "da definire" or "TBD" or "auf Anfrage" → use 0
+7. Currency: detect CHF, EUR, USD, GBP etc.
+8. Duration/unit: extract "al mese", "a volta", "per anno", "al giorno", "50 min" as unitLabel
+9. IVA/VAT %: extract if present as vatRate number
+10. Multi-price services: create separate entry for each price point (e.g., monthly AND daily rates)
+11. Translate names to English, keep original in originalName
 
-Rules:
-1. Detect the language automatically
-2. Translate all service names to English
-3. Keep original name in a "originalName" field
-4. Extract price if present (convert to cents/integer)
-5. Detect currency (EUR, USD, GBP, CHF etc.)
-6. Categorize each service as one of: boarding | lessons | farrier | vet | grooming | training | competitions | feed | other
-7. Extract unit if present (per_day, per_session, per_month, per_visit, per_item, custom)
-8. If price is a range, use the lower price
+CATEGORY MAPPING:
+- Pensione cavallo/Pferdepension/Horse boarding → boarding
+- Lezione/Unterricht/Lesson → lessons
+- Lavoro alla corda/Longe/Lunging → training
+- Lavoro cavallo montato/Reitarbeit → training
+- Maniscalco/Ferratura/Hufschmied/Farrier → farrier
+- Veterinario/Tierarzt/Vet → vet
+- Tosatura/Scheren/Grooming → grooming
+- Trasporti/Transport → other
+- Concorsi/Turniere/Competition → competitions
+- Pascoli/Weide/Pasture → boarding
+- Fieno/Mangime/Heu/Futter/Feed → feed
+- Giostra/Führanlage/Horse walker → training
+- Arena/Halle/Indoor arena → training
 
-Return ONLY valid JSON in this exact format:
+Return ONLY this exact JSON format:
 {
   "services": [
     {
-      "name": "English service name",
-      "originalName": "Name in original language",
-      "description": "Brief description in English",
-      "category": "one of the categories above",
-      "price": 5000,
-      "currency": "EUR",
-      "unit": "per_session",
-      "unitLabel": "session"
+      "name": "Horse Boarding",
+      "originalName": "Pensione cavallo",
+      "description": "Monthly horse boarding",
+      "category": "boarding",
+      "price": 136500,
+      "currency": "CHF",
+      "unit": "per_month",
+      "unitLabel": "month",
+      "vatRate": 8.1
     }
   ],
   "detectedLanguage": "Italian",
+  "currency": "CHF",
   "confidence": "high"
 }
 
-Do NOT include any text outside the JSON.
-Do NOT include markdown code blocks.
-If you cannot extract a price, use 0.
-If you cannot determine category, use "other".`
+IMPORTANT: Return ONLY the JSON object.
+No markdown, no explanation, no code blocks.
+Do not wrap in \`\`\`json code blocks.`
 
 // BREADCRUMB: Extract JSON from response text, handles markdown code blocks
 function extractJsonFromText(text: string): string {
+  const trimmed = text.trim()
+
+  // If already starts with {, return as-is
+  if (trimmed.startsWith("{")) return trimmed
+
   // Try to find JSON in markdown code blocks
-  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/)
   if (codeBlockMatch) return codeBlockMatch[1].trim()
 
   // Try to find JSON object directly
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  const jsonMatch = trimmed.match(/\{[\s\S]*\}/)
   if (jsonMatch) return jsonMatch[0]
 
-  return text
+  return trimmed
 }
 
 // BREADCRUMB: Parse Claude API response with error recovery
@@ -92,20 +116,31 @@ function parseExtractionResult(responseText: string): ExtractionResult {
       originalName: s.originalName ? String(s.originalName) : undefined,
       description: String(s.description || ""),
       category: validateCategory(String(s.category || "other")),
-      price: typeof s.price === "number" ? s.price : 0,
-      currency: String(s.currency || "EUR"),
+      price: typeof s.price === "number" ? Math.round(s.price) : 0,
+      currency: String(s.currency || parsed.currency || "EUR"),
       unit: validateUnit(String(s.unit || "per_session")),
       unitLabel: s.unitLabel ? String(s.unitLabel) : undefined,
+      vatRate: typeof s.vatRate === "number" ? s.vatRate : undefined,
       isActive: true,
     }))
 
     return {
       services,
       detectedLanguage: String(parsed.detectedLanguage || "Unknown"),
+      detectedCurrency: String(parsed.currency || services[0]?.currency || "EUR"),
       confidence: validateConfidence(parsed.confidence),
     }
   } catch {
-    throw new Error("Failed to parse extraction result. Please try again.")
+    // Return error with raw response for debugging
+    throw new ParseError("Failed to parse extraction result", responseText)
+  }
+}
+
+class ParseError extends Error {
+  rawResponse: string
+  constructor(message: string, rawResponse: string) {
+    super(message)
+    this.rawResponse = rawResponse
   }
 }
 
@@ -115,8 +150,26 @@ function validateCategory(cat: string): ServiceCategory {
 }
 
 function validateUnit(unit: string): ServiceUnit {
-  const valid: ServiceUnit[] = ["per_month", "per_session", "per_day", "per_visit", "per_item", "custom"]
-  return valid.includes(unit as ServiceUnit) ? (unit as ServiceUnit) : "per_session"
+  const mapping: Record<string, ServiceUnit> = {
+    "per_month": "per_month",
+    "per month": "per_month",
+    "al mese": "per_month",
+    "pro Monat": "per_month",
+    "per_day": "per_day",
+    "per day": "per_day",
+    "al giorno": "per_day",
+    "pro Tag": "per_day",
+    "per_session": "per_session",
+    "per session": "per_session",
+    "a volta": "per_session",
+    "pro Einheit": "per_session",
+    "per_visit": "per_visit",
+    "per visit": "per_visit",
+    "per_item": "per_item",
+    "per item": "per_item",
+    "custom": "custom",
+  }
+  return mapping[unit.toLowerCase()] || "per_session"
 }
 
 function validateConfidence(conf: unknown): "high" | "medium" | "low" {
@@ -131,20 +184,23 @@ async function extractServicesFromPdf(file: File): Promise<ExtractionResult> {
   const textDecoder = new TextDecoder("utf-8")
   const rawText = textDecoder.decode(arrayBuffer)
 
-  // Clean up PDF binary content - extract readable text
+  // Clean up PDF binary content - extract readable text, preserve numbers
   const extractedText = rawText
-    .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, " ")
+    .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t']/g, " ") // Keep apostrophe for Swiss numbers
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 10000) // Limit to first 10k chars
+    .slice(0, 15000) // Increased limit for longer price lists
 
   if (extractedText.length < 50) {
     throw new Error("Could not extract readable text from PDF. Try a text-based PDF.")
   }
 
-  const userPrompt = `Extract all services from this document. The document may be in any language.
+  const userPrompt = `Extract all services and prices from this horse stable price list.
+The document may be in Italian, German, French, or English.
+Handle Swiss number format (1'365.00) and European format (1.365,00).
+Create separate entries for services with multiple price points.
 Translate names to English but keep originals.
-Return only JSON.
+Return ONLY valid JSON, no markdown.
 
 Document content:
 ${extractedText}`
@@ -168,8 +224,10 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [extracted, setExtracted] = useState<ExtractedService[]>([])
   const [detectedLanguage, setDetectedLanguage] = useState<string>("")
+  const [detectedCurrency, setDetectedCurrency] = useState<string>("EUR")
   const [confidence, setConfidence] = useState<"high" | "medium" | "low">("medium")
   const [error, setError] = useState<string | null>(null)
+  const [rawResponse, setRawResponse] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [editingIdx, setEditingIdx] = useState<number | null>(null)
 
@@ -179,16 +237,23 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
       return
     }
     setError(null)
+    setRawResponse(null)
     setStep(2)
 
     try {
       const result = await extractServicesFromPdf(file)
       setExtracted(result.services)
       setDetectedLanguage(result.detectedLanguage)
+      setDetectedCurrency(result.detectedCurrency)
       setConfidence(result.confidence)
       setStep(3)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to extract services")
+      if (err instanceof ParseError) {
+        setError(err.message)
+        setRawResponse(err.rawResponse)
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to extract services")
+      }
       setStep(1)
     }
   }, [])
@@ -212,10 +277,11 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
   }
 
   const handleConfirm = () => {
-    // Remove originalName before importing
+    // Remove originalName and vatRate before importing
     const cleaned = extracted.map((svc) => {
-      const { originalName, ...rest } = svc
-      void originalName // Explicitly mark as intentionally unused
+      const { originalName, vatRate, ...rest } = svc
+      void originalName
+      void vatRate
       return rest
     })
     onImport(cleaned)
@@ -223,7 +289,11 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
     setTimeout(onClose, 1500)
   }
 
-  const formatPrice = (cents: number) => `€${(cents / 100).toFixed(2)}`
+  const formatPrice = (cents: number, currency: string) => {
+    const symbol = currency === "CHF" ? "CHF " : currency === "USD" ? "$" : currency === "GBP" ? "£" : "€"
+    return `${symbol}${(cents / 100).toFixed(2)}`
+  }
+
   const confidenceColor = confidence === "high" ? "text-green-400" : confidence === "medium" ? "text-yellow-400" : "text-red-400"
 
   return (
@@ -237,9 +307,19 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
 
         <div className="p-6">
           {error && (
-            <div className="mb-4 p-3 rounded-md bg-red-500/10 border border-red-500/20 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
-              <span className="text-sm text-red-400">{error}</span>
+            <div className="mb-4 p-3 rounded-md bg-red-500/10 border border-red-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
+                <span className="text-sm text-red-400">{error}</span>
+              </div>
+              {rawResponse && (
+                <details className="mt-2">
+                  <summary className="text-xs text-red-400/70 cursor-pointer">Show raw response</summary>
+                  <pre className="mt-2 p-2 rounded bg-black/30 text-xs text-red-400/70 overflow-x-auto max-h-32 overflow-y-auto">
+                    {rawResponse.slice(0, 500)}
+                  </pre>
+                </details>
+              )}
             </div>
           )}
 
@@ -248,7 +328,8 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
               onDragOver={(e) => { e.preventDefault(); setDragOver(true) }} onDragLeave={() => setDragOver(false)} onDrop={handleDrop}>
               <Upload className="h-10 w-10 text-[var(--text-muted)] mb-3" />
               <span className="text-sm text-[var(--text-primary)] mb-1">Drop your PDF here or click to upload</span>
-              <span className="text-xs text-[var(--text-muted)]">Supports any language: Italian, German, French, Spanish, English...</span>
+              <span className="text-xs text-[var(--text-muted)]">Supports Italian, German, French, Spanish, English</span>
+              <span className="text-xs text-[var(--text-muted)]">Handles CHF, EUR and Swiss number formats</span>
               <input type="file" accept=".pdf" onChange={handleChange} className="hidden" />
             </label>
           )}
@@ -256,19 +337,22 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
           {step === 2 && (
             <div className="flex flex-col items-center justify-center h-48">
               <Loader2 className="h-10 w-10 text-[#2C5F2E] animate-spin mb-4" />
-              <span className="text-sm text-[var(--text-primary)]">Analysing with Claude...</span>
-              <span className="text-xs text-[var(--text-muted)] mt-1">Detecting language and extracting services</span>
+              <span className="text-sm text-[var(--text-primary)]">Processing document...</span>
+              <span className="text-xs text-[var(--text-muted)] mt-1">This may take a moment</span>
             </div>
           )}
 
           {step === 3 && (
             <div className="space-y-4">
-              {/* Language and confidence info */}
-              <div className="flex items-center gap-4 text-sm">
+              {/* Language, currency and confidence info */}
+              <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-[var(--text-muted)]" />
-                  <span className="text-[var(--text-muted)]">Detected:</span>
                   <span className="text-[var(--text-primary)]">{detectedLanguage}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-[var(--text-muted)]" />
+                  <span className="text-[var(--text-primary)]">{detectedCurrency}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[var(--text-muted)]">Confidence:</span>
@@ -322,7 +406,11 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
                           {svc.originalName && svc.originalName !== svc.name && (
                             <p className="text-xs text-[var(--text-muted)] truncate italic">({svc.originalName})</p>
                           )}
-                          <p className="text-xs text-[var(--text-muted)]">{svc.category} • {formatPrice(svc.price)}</p>
+                          <p className="text-xs text-[var(--text-muted)]">
+                            {svc.category} • {formatPrice(svc.price, svc.currency)}
+                            {svc.unitLabel && ` / ${svc.unitLabel}`}
+                            {svc.vatRate && ` (${svc.vatRate}% VAT)`}
+                          </p>
                         </div>
                         <button onClick={() => setEditingIdx(idx)} className="p-1.5 rounded hover:bg-[#1A1A2E] text-blue-400"><Edit2 className="h-4 w-4" /></button>
                         <button onClick={() => handleRemove(idx)} className="p-1.5 rounded hover:bg-[#1A1A2E] text-red-400"><Trash2 className="h-4 w-4" /></button>
