@@ -11,7 +11,7 @@
 
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import {
   X,
   Upload,
@@ -93,6 +93,7 @@ export function DocumentUploadSheet({ onClose, onSuccess }: DocumentUploadSheetP
   const { clients } = useClients()
   const { staff } = useStaff()
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState<UploadStep>("drop")
   const [isDragging, setIsDragging] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -360,7 +361,8 @@ export function DocumentUploadSheet({ onClose, onSuccess }: DocumentUploadSheetP
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
                 isDragging
                   ? "border-[var(--green-primary)] bg-[var(--green-glow)]"
                   : "border-[var(--border)] hover:border-[var(--border-light)]"
@@ -375,11 +377,11 @@ export function DocumentUploadSheet({ onClose, onSuccess }: DocumentUploadSheetP
                 AI will auto-fill the details
               </p>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                 onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                style={{ position: "relative", marginTop: "1rem" }}
+                className="hidden"
               />
             </div>
           )}

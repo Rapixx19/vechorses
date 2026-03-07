@@ -199,6 +199,7 @@ export function useAddDocument() {
           ai_summary: input.aiSummary || null,
           ai_confidence: input.aiConfidence || null,
           status: calculateStatus(input.expiryDate || null),
+          type: "file",
         })
         .select("id")
         .single()
