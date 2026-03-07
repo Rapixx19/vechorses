@@ -99,6 +99,7 @@ export interface Document {
   title?: string
   category: DocumentCategory
   fileUrl: string | null
+  fileData: string | null
   fileSize: string | null
   documentDate: string | null
   expiryDate: string | null
@@ -109,6 +110,7 @@ export interface Document {
   uploadedBy: string | null
   uploadedAt: string
   aiSummary: string | null
+  aiConfidence: string | null
   status: DocumentStatus
 }
 

@@ -1,12 +1,12 @@
 /**
  * FILE: app/api/analyse-document/route.ts
  * ZONE: Yellow
- * PURPOSE: API endpoint to analyse documents with Claude AI
+ * PURPOSE: API endpoint to analyse documents with Claude AI - extracts metadata and pre-fills forms
  * EXPORTS: POST, maxDuration, dynamic
  * DEPENDS ON: Anthropic API
- * CONSUMED BY: DocumentDetailSheet component
+ * CONSUMED BY: DocumentUploadSheet, BulkUploadSheet, DocumentDetailSheet
  * TESTS: app/api/analyse-document/route.test.ts
- * LAST CHANGED: 2026-03-07 — Initial creation
+ * LAST CHANGED: 2026-03-07 — Added smart PDF analysis with entity detection
  */
 
 import { NextRequest, NextResponse } from "next/server"
@@ -15,48 +15,108 @@ import { NextRequest, NextResponse } from "next/server"
 export const maxDuration = 60
 export const dynamic = "force-dynamic"
 
-// BREADCRUMB: System prompt for document analysis
-const SYSTEM_PROMPT = `You are an expert document analyst for horse stable management. Analyze the provided document and extract key information.
+// BREADCRUMB: Comprehensive system prompt for horse stable document analysis
+const SYSTEM_PROMPT = `You are analysing a horse stable management document. Extract all relevant info and classify it correctly.
 
-Your task is to:
-1. Summarize the document in 2-3 sentences
-2. Extract any important dates (issue date, expiry date, renewal dates)
-3. Identify key entities mentioned (horses, people, companies, locations)
-4. Suggest relevant tags for categorization
-5. Note any action items or deadlines
+CATEGORY OPTIONS:
+- stable_license: Stable operating licenses and permits
+- stable_insurance: Stable liability and property insurance
+- stable_contract: Stable rental/lease agreements
+- horse_passport: Horse identification documents and passports
+- horse_vaccination: Vaccination records and certificates
+- horse_insurance: Horse insurance policies
+- horse_medical: Veterinary reports, health certificates, medical records
+- client_contract: Boarding agreements, client contracts
+- client_insurance: Client liability insurance
+- client_invoice: Invoices to clients
+- staff_contract: Employment contracts
+- staff_certification: Staff certifications and qualifications
+- financial_report: Financial reports, statements
+- compliance_audit: Safety audits, compliance certificates
+- other: Documents that don't fit other categories
 
-Return ONLY valid JSON, no markdown:
+ENTITY TYPE RULES:
+- If document mentions a specific horse name → entityType: "horse"
+- If document is about a client/owner → entityType: "client"
+- If document is about an employee → entityType: "staff"
+- If document is general stable business → entityType: "stable"
+
+Return ONLY this JSON (no markdown):
 {
-  "summary": "Brief 2-3 sentence summary of the document",
+  "title": "Suggested document title",
+  "category": "exact_category_from_list",
+  "categoryLabel": "Human readable category name",
+  "summary": "2-3 sentence summary of document content",
+  "documentDate": "2024-01-01 or null if not found",
+  "expiryDate": "2025-01-01 or null if not found",
+  "issuedBy": "Name of issuing authority/person/company or null",
+  "referenceNumber": "Reference/policy/contract number or null",
+  "suggestedTags": ["tag1", "tag2", "tag3"],
+  "entities": {
+    "horseName": "Name if mentioned or null",
+    "clientName": "Name if mentioned or null",
+    "staffName": "Name if mentioned or null",
+    "vetName": "Veterinarian name if mentioned or null",
+    "companyName": "Company/organization name if mentioned or null"
+  },
+  "entityType": "horse|client|staff|stable",
+  "confidence": "high|medium|low",
+  "language": "Detected document language",
   "keyDates": [
-    { "type": "expiry", "date": "2024-12-31", "description": "Policy expiration" }
+    {"label": "Issue Date", "date": "2024-01-01"},
+    {"label": "Expiry Date", "date": "2025-01-01"}
   ],
-  "entities": [
-    { "type": "horse", "name": "Thunder" },
-    { "type": "company", "name": "Allianz Insurance" }
-  ],
-  "suggestedTags": ["insurance", "annual", "liability"],
-  "actionItems": [
-    { "action": "Renew policy", "deadline": "2024-11-30" }
-  ],
-  "confidence": "high"
+  "importantInfo": [
+    "Policy number: ABC123",
+    "Coverage amount: EUR 500,000",
+    "Key terms or conditions"
+  ]
 }`
 
 interface AnalyseRequest {
+  pdfBase64?: string
+  imageBase64?: string
+  mediaType?: string
+  fileName?: string
   documentUrl?: string
   documentTitle?: string
   category?: string
-  pdfBase64?: string
 }
 
-export async function POST(request: NextRequest) {
+interface AnalysisResult {
+  success: boolean
+  title?: string
+  category?: string
+  categoryLabel?: string
+  summary?: string
+  documentDate?: string | null
+  expiryDate?: string | null
+  issuedBy?: string | null
+  referenceNumber?: string | null
+  suggestedTags?: string[]
+  entities?: {
+    horseName?: string | null
+    clientName?: string | null
+    staffName?: string | null
+    vetName?: string | null
+    companyName?: string | null
+  }
+  entityType?: string
+  confidence?: string
+  language?: string
+  keyDates?: Array<{ label: string; date: string }>
+  importantInfo?: string[]
+  error?: string
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse<AnalysisResult>> {
   try {
     const body: AnalyseRequest = await request.json()
-    const { documentUrl, documentTitle, category, pdfBase64 } = body
+    const { pdfBase64, imageBase64, mediaType, fileName, documentUrl, documentTitle, category } = body
 
-    if (!documentUrl && !pdfBase64) {
+    if (!pdfBase64 && !imageBase64 && !documentUrl) {
       return NextResponse.json(
-        { success: false, error: "No document URL or PDF data provided" },
+        { success: false, error: "No document data provided" },
         { status: 400 }
       )
     }
@@ -71,7 +131,12 @@ export async function POST(request: NextRequest) {
     }
 
     // BREADCRUMB: Build the message content based on input type
-    const userContent: Array<{ type: string; text?: string; source?: { type: string; media_type: string; data: string } }> = []
+    type ContentBlock =
+      | { type: "document"; source: { type: "base64"; media_type: string; data: string } }
+      | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
+      | { type: "text"; text: string }
+
+    const userContent: ContentBlock[] = []
 
     if (pdfBase64) {
       // PDF document provided as base64
@@ -83,14 +148,29 @@ export async function POST(request: NextRequest) {
           data: pdfBase64,
         },
       })
+    } else if (imageBase64 && mediaType) {
+      // Image provided as base64
+      userContent.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: mediaType,
+          data: imageBase64,
+        },
+      })
     }
 
     // Add context and instruction
     userContent.push({
       type: "text",
-      text: `Analyze this document${documentTitle ? ` titled "${documentTitle}"` : ""}${category ? ` (category: ${category})` : ""}${documentUrl && !pdfBase64 ? `. Document URL: ${documentUrl}` : ""}.
+      text: `Analyse this document from a horse stable.
+${fileName ? `File name: ${fileName}` : ""}
+${documentTitle ? `Title hint: ${documentTitle}` : ""}
+${category ? `Category hint: ${category}` : ""}
+${documentUrl && !pdfBase64 && !imageBase64 ? `Document URL: ${documentUrl}` : ""}
 
-Extract key information and return the JSON analysis. Focus on dates, entities, and actionable items relevant to horse stable management.`,
+Extract all information and classify it accurately.
+Return only the JSON object, no additional text.`,
     })
 
     // BREADCRUMB: Determine which headers to use based on content type
@@ -143,24 +223,32 @@ Extract key information and return the JSON analysis. Focus on dates, entities, 
       const parsed = JSON.parse(cleaned)
       return NextResponse.json({
         success: true,
+        title: parsed.title,
+        category: parsed.category,
+        categoryLabel: parsed.categoryLabel,
         summary: parsed.summary,
-        keyDates: parsed.keyDates || [],
-        entities: parsed.entities || [],
+        documentDate: parsed.documentDate,
+        expiryDate: parsed.expiryDate,
+        issuedBy: parsed.issuedBy,
+        referenceNumber: parsed.referenceNumber,
         suggestedTags: parsed.suggestedTags || [],
-        actionItems: parsed.actionItems || [],
+        entities: parsed.entities || {},
+        entityType: parsed.entityType,
         confidence: parsed.confidence || "medium",
+        language: parsed.language,
+        keyDates: parsed.keyDates || [],
+        importantInfo: parsed.importantInfo || [],
       })
     } catch {
-      // If JSON parsing fails, return the raw summary
+      // If JSON parsing fails, return partial data
       console.error("Failed to parse Claude response:", cleaned.slice(0, 500))
       return NextResponse.json({
         success: true,
         summary: cleaned.slice(0, 500),
-        keyDates: [],
-        entities: [],
-        suggestedTags: [],
-        actionItems: [],
         confidence: "low",
+        suggestedTags: [],
+        keyDates: [],
+        importantInfo: [],
       })
     }
   } catch (error: unknown) {

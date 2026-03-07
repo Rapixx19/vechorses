@@ -26,6 +26,7 @@ interface DocumentRow {
   title: string | null
   category: string | null
   file_url: string | null
+  file_data: string | null
   file_size: string | null
   document_date: string | null
   expiry_date: string | null
@@ -36,6 +37,7 @@ interface DocumentRow {
   uploaded_by: string | null
   uploaded_at: string
   ai_summary: string | null
+  ai_confidence: string | null
   status: string | null
 }
 
@@ -62,6 +64,7 @@ function mapRowToDocument(row: DocumentRow): Document {
     title: row.title || undefined,
     category: (row.category as DocumentCategory) || "other",
     fileUrl: row.file_url,
+    fileData: row.file_data,
     fileSize: row.file_size,
     documentDate: row.document_date,
     expiryDate: row.expiry_date,
@@ -72,6 +75,7 @@ function mapRowToDocument(row: DocumentRow): Document {
     uploadedBy: row.uploaded_by,
     uploadedAt: row.uploaded_at,
     aiSummary: row.ai_summary,
+    aiConfidence: row.ai_confidence,
     status: calculateStatus(row.expiry_date),
   }
 }
@@ -151,6 +155,7 @@ export interface AddDocumentInput {
   title?: string
   category: DocumentCategory
   fileUrl?: string
+  fileData?: string
   fileSize?: string
   documentDate?: string
   expiryDate?: string
@@ -158,6 +163,8 @@ export interface AddDocumentInput {
   referenceNumber?: string
   tags?: string[]
   notes?: string
+  aiSummary?: string
+  aiConfidence?: string
 }
 
 export function useAddDocument() {
@@ -180,6 +187,7 @@ export function useAddDocument() {
           title: input.title || input.name,
           category: input.category,
           file_url: input.fileUrl || null,
+          file_data: input.fileData || null,
           file_size: input.fileSize || null,
           document_date: input.documentDate || null,
           expiry_date: input.expiryDate || null,
@@ -188,6 +196,8 @@ export function useAddDocument() {
           tags: input.tags || [],
           notes: input.notes || null,
           uploaded_by: currentUser.id,
+          ai_summary: input.aiSummary || null,
+          ai_confidence: input.aiConfidence || null,
           status: calculateStatus(input.expiryDate || null),
         })
         .select("id")
