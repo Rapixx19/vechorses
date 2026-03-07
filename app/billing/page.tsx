@@ -14,7 +14,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Plus, FileText, Download } from "lucide-react"
+import { FileText, Download, X } from "lucide-react"
 import {
   useBilling,
   useSettings,
@@ -22,7 +22,6 @@ import {
   BillingFilters,
   BillingTable,
   BillingItemSheet,
-  NewBillingItemForm,
   MonthlyRevenueSummary,
   ClientBillingCard,
   InvoiceBuilder,
@@ -47,8 +46,7 @@ export default function BillingPage() {
   }, [billingItems])
   const [filters, setFilters] = useState<BillingFilterState>({ search: "", status: "all", serviceType: "all", dateRange: "all" })
   const [selectedItem, setSelectedItem] = useState<BillingLineItem | null>(null)
-  const [showNewForm, setShowNewForm] = useState(false)
-  const [preselectedClientId, setPreselectedClientId] = useState<string | null>(null)
+  const [showClientPicker, setShowClientPicker] = useState(false)
   const [invoiceClient, setInvoiceClient] = useState<{ client: Client; items: BillingLineItem[] } | null>(null)
 
   // BREADCRUMB: All hooks must be called before any conditional returns (React rules of hooks)
@@ -114,14 +112,10 @@ export default function BillingPage() {
     setSelectedItem(null)
   }
 
-  const handleNewItem = (item: Omit<BillingLineItem, "id" | "createdAt">) => {
-    const newItem: BillingLineItem = { ...item, id: `billing-${Date.now()}`, createdAt: new Date().toISOString() }
-    setLocalItems((prev) => [newItem, ...prev])
-  }
-
-  const handleAddItemForClient = (clientId: string) => {
-    setPreselectedClientId(clientId)
-    setShowNewForm(true)
+  const handleGenerateBill = (client: Client) => {
+    const clientItems = localItems.filter((i) => i.clientId === client.id && i.status === "pending")
+    setInvoiceClient({ client, items: clientItems })
+    setShowClientPicker(false)
   }
 
   const handleGenerateAllInvoices = () => {
@@ -138,8 +132,8 @@ export default function BillingPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-[var(--text-primary)]">Billing</h2>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowNewForm(true)} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
-            <Plus className="h-4 w-4" />Add Service
+          <button onClick={() => setShowClientPicker(true)} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
+            <FileText className="h-4 w-4" />Generate Bill
           </button>
           <button onClick={handleGenerateAllInvoices} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-blue-900/30 text-blue-400 hover:bg-blue-900/50">
             <FileText className="h-4 w-4" />Generate All Invoices
@@ -178,7 +172,6 @@ export default function BillingPage() {
               client={client}
               items={items}
               onStatusChange={handleClientStatusChange}
-              onAddItem={handleAddItemForClient}
               onGenerateInvoice={() => setInvoiceClient({ client, items: items.filter((i) => i.status === "pending") })}
             />
           ))}
@@ -203,13 +196,38 @@ export default function BillingPage() {
         />
       )}
 
-      {showNewForm && (
-        <NewBillingItemForm
-          clients={clients}
-          preselectedClientId={preselectedClientId}
-          onSubmit={handleNewItem}
-          onClose={() => { setShowNewForm(false); setPreselectedClientId(null) }}
-        />
+      {/* Client Picker for Generate Bill */}
+      {showClientPicker && (
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setShowClientPicker(false)}>
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative w-80 h-full bg-[#0F1117] border-l border-[var(--border)] p-6 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowClientPicker(false)} className="absolute top-4 right-4 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="font-semibold text-lg text-[var(--text-primary)] mb-4">Select Client</h3>
+            <p className="text-sm text-[var(--text-muted)] mb-6">Choose a client to generate an invoice for</p>
+            <div className="space-y-2">
+              {clients.filter((c) => c.isActive).map((client) => {
+                const pendingCount = localItems.filter((i) => i.clientId === client.id && i.status === "pending").length
+                return (
+                  <button
+                    key={client.id}
+                    onClick={() => handleGenerateBill(client)}
+                    className="w-full text-left px-4 py-3 rounded-md bg-[#1A1A2E] hover:bg-[#252538] transition-colors"
+                  >
+                    <div className="font-medium text-[var(--text-primary)]">{client.fullName}</div>
+                    <div className="text-xs text-[var(--text-muted)]">
+                      {pendingCount > 0 ? `${pendingCount} pending item${pendingCount > 1 ? "s" : ""}` : "No pending items"}
+                    </div>
+                  </button>
+                )
+              })}
+              {clients.filter((c) => c.isActive).length === 0 && (
+                <p className="text-center py-8 text-[var(--text-muted)]">No clients found</p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {invoiceClient && (

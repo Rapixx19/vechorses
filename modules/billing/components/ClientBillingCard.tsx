@@ -6,7 +6,7 @@
  * DEPENDS ON: lib/types.ts, PaymentStatusBar, lucide-react
  * CONSUMED BY: app/billing/page.tsx
  * TESTS: modules/billing/tests/ClientBillingCard.test.tsx
- * LAST CHANGED: 2026-03-06 — Initial creation
+ * LAST CHANGED: 2026-03-07 — Removed Add Item button, simplified to Generate Invoice only
  */
 
 // 🔴 RED ZONE — billing module, handle with care
@@ -14,7 +14,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, ChevronUp, Plus, FileText } from "lucide-react"
+import { ChevronDown, ChevronUp, FileText } from "lucide-react"
 import { PaymentStatusBar } from "./PaymentStatusBar"
 import type { BillingLineItem, BillingStatus, Client, ServiceType } from "@/lib/types"
 
@@ -22,7 +22,6 @@ interface ClientBillingCardProps {
   client: Client
   items: BillingLineItem[]
   onStatusChange: (clientId: string, newStatus: BillingStatus) => void
-  onAddItem: (clientId: string) => void
   onGenerateInvoice: (clientId: string) => void
 }
 
@@ -36,7 +35,7 @@ const serviceColors: Record<ServiceType, string> = {
 
 const getInitials = (name: string) => name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
 
-export function ClientBillingCard({ client, items, onStatusChange, onAddItem, onGenerateInvoice }: ClientBillingCardProps) {
+export function ClientBillingCard({ client, items, onStatusChange, onGenerateInvoice }: ClientBillingCardProps) {
   const [expanded, setExpanded] = useState(false)
 
   const total = items.reduce((sum, i) => sum + i.amountCents, 0)
@@ -94,15 +93,10 @@ export function ClientBillingCard({ client, items, onStatusChange, onAddItem, on
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <button onClick={() => onGenerateInvoice(client.id)} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
-            <FileText className="h-3 w-3" />Generate Invoice
-          </button>
-          <button onClick={() => onAddItem(client.id)} className="flex items-center justify-center gap-1 px-3 py-2 rounded text-sm font-medium bg-amber-900/30 text-amber-400 hover:bg-amber-900/50">
-            <Plus className="h-3 w-3" />Add Item
-          </button>
-        </div>
+        {/* Action Button */}
+        <button onClick={() => onGenerateInvoice(client.id)} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
+          <FileText className="h-4 w-4" />Generate Invoice
+        </button>
       </div>
     </div>
   )
