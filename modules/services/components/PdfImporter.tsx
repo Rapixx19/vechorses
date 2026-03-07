@@ -213,7 +213,11 @@ export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
 
   const handleConfirm = () => {
     // Remove originalName before importing
-    const cleaned = extracted.map(({ originalName: _orig, ...rest }) => rest)
+    const cleaned = extracted.map((svc) => {
+      const { originalName, ...rest } = svc
+      void originalName // Explicitly mark as intentionally unused
+      return rest
+    })
     onImport(cleaned)
     setStep(4)
     setTimeout(onClose, 1500)
