@@ -220,7 +220,7 @@ export interface Service {
 
 // Auth & Team Management
 export type UserRole = "owner" | "manager" | "staff" | "custom"
-export type ModuleName = "dashboard" | "horses" | "clients" | "stalls" | "billing" | "services" | "settings" | "staff"
+export type ModuleName = "dashboard" | "horses" | "clients" | "stalls" | "billing" | "services" | "settings" | "staff" | "calendar"
 
 export interface ModulePermission {
   module: ModuleName
@@ -297,3 +297,31 @@ export interface StaffTask {
   horseName?: string
   createdAt: string
 }
+
+// Calendar Types
+export type EventCategory = "general" | "vet" | "farrier" | "competition" | "training" | "feeding" | "vacation" | "meeting"
+
+export interface CalendarEvent {
+  id: string
+  stableId: string
+  title: string
+  description?: string
+  startTime: string
+  endTime: string
+  allDay: boolean
+  category: EventCategory
+  color: string
+  location?: string
+  horseId?: string
+  horseName?: string
+  assignedTo: string[]
+  assignedStaff?: { id: string; fullName: string; color?: string }[]
+  createdBy?: string
+  isRecurring: boolean
+  recurrenceRule?: string
+  externalId?: string
+  externalSource?: string
+  createdAt: string
+}
+
+export type CalendarViewMode = "month" | "week" | "day"

@@ -14,7 +14,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Rabbit, Users, Users2, Grid3X3, Receipt, Tag, Settings, Bell, LogOut, ChevronUp } from "lucide-react"
+import { LayoutDashboard, Rabbit, Users, Users2, Calendar, Grid3X3, Receipt, Tag, Settings, Bell, LogOut, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/hooks/useAuth"
 import type { ModuleName } from "@/lib/types"
@@ -25,6 +25,7 @@ const navItems: { href: string; label: string; icon: React.ElementType; module: 
   { href: "/horses", label: "Horses", icon: Rabbit, module: "horses" },
   { href: "/clients", label: "Clients", icon: Users, module: "clients" },
   { href: "/staff", label: "Staff", icon: Users2, module: "staff" },
+  { href: "/calendar", label: "Calendar", icon: Calendar, module: "calendar" },
   { href: "/stalls", label: "Stalls", icon: Grid3X3, module: "stalls" },
   { href: "/billing", label: "Billing", icon: Receipt, module: "billing" },
   { href: "/services", label: "Services", icon: Tag, module: "services" },
