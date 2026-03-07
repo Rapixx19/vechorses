@@ -29,7 +29,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | null>(null)
 
 // Fetches profile and builds AuthUser from Supabase data
-// If profile doesn't exist, creates a basic one on the fly
+// If profile doesn't exist, creates via API route (uses service role to bypass RLS)
 // If stable_id is missing, attempts to link to an owned stable
 async function fetchUserProfile(
   supabase: ReturnType<typeof createClient>,
@@ -38,36 +38,47 @@ async function fetchUserProfile(
 ): Promise<AuthUser | null> {
   const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
-  // If profile not found, create a basic one
+  // If profile not found, create via API route (service role bypasses RLS)
   if (error || !data) {
-    console.log("Profile not found, creating basic profile for:", userId)
+    console.log("Profile not found, creating via API for:", userId)
     const defaultPermissions = getDefaultPermissions("owner")
 
-    // Check if user owns a stable (created during registration)
-    const { data: ownedStable } = await supabase
-      .from("stables")
-      .select("id, stable_name")
-      .eq("owner_user_id", userId)
-      .single()
+    try {
+      const res = await fetch("/api/create-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          email: userEmail,
+          fullName: userEmail || "User",
+        }),
+      })
 
-    const stableId = ownedStable?.id || undefined
+      const result = await res.json()
 
-    await supabase.from("profiles").upsert({
-      id: userId,
-      full_name: userEmail || "User",
-      role: "owner",
-      permissions: defaultPermissions,
-      stable_id: stableId,
-    })
+      if (!res.ok) {
+        console.error("Failed to create profile:", result.error)
+      }
 
-    return {
-      id: userId,
-      fullName: userEmail || "User",
-      email: userEmail || "",
-      role: "owner",
-      permissions: defaultPermissions,
-      stableId,
-      stableName: ownedStable?.stable_name,
+      return {
+        id: userId,
+        fullName: userEmail || "User",
+        email: userEmail || "",
+        role: "owner",
+        permissions: defaultPermissions,
+        stableId: result.stableId || undefined,
+        stableName: result.stableName || undefined,
+      }
+    } catch (err) {
+      console.error("Profile creation API error:", err)
+      return {
+        id: userId,
+        fullName: userEmail || "User",
+        email: userEmail || "",
+        role: "owner",
+        permissions: defaultPermissions,
+        stableId: undefined,
+      }
     }
   }
 
