@@ -6,7 +6,7 @@
  * DEPENDS ON: lib/types.ts, lucide-react
  * CONSUMED BY: ServiceGrid
  * TESTS: modules/services/tests/ServiceCard.test.tsx
- * LAST CHANGED: 2026-03-06 — Initial creation for service management
+ * LAST CHANGED: 2026-03-07 — Fixed currency display to use service.currency
  */
 
 import { Edit2, Trash2, Home, GraduationCap, Hammer, Stethoscope, Sparkles, Dumbbell, Trophy, Wheat, MoreHorizontal } from "lucide-react"
@@ -53,7 +53,15 @@ const unitLabels: Record<string, string> = {
 
 export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
   const Icon = categoryIcons[service.category]
-  const formatPrice = (cents: number) => `€${(cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
+
+  // BREADCRUMB: Format price with correct currency symbol
+  const formatPrice = (cents: number, currency: string) => {
+    const value = (cents / 100).toLocaleString("de-CH", { minimumFractionDigits: 2 })
+    if (currency === "CHF") return `CHF ${value}`
+    if (currency === "USD") return `$${value}`
+    if (currency === "GBP") return `£${value}`
+    return `€${value}`
+  }
 
   return (
     <div className="rounded-lg overflow-hidden" style={{ backgroundColor: "#1A1A2E" }}>
@@ -85,7 +93,7 @@ export function ServiceCard({ service, onEdit, onDelete }: ServiceCardProps) {
         </div>
         <p className="text-xs text-[var(--text-muted)] line-clamp-2 mb-3">{service.description}</p>
         <div className="flex items-baseline gap-1">
-          <span className="text-lg font-semibold text-[var(--text-primary)]">{formatPrice(service.price)}</span>
+          <span className="text-lg font-semibold text-[var(--text-primary)]">{formatPrice(service.price, service.currency)}</span>
           <span className="text-xs text-[var(--text-muted)]">{service.unitLabel || unitLabels[service.unit]}</span>
         </div>
       </div>
