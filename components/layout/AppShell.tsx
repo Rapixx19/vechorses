@@ -38,10 +38,11 @@ const roleColors: Record<string, string> = {
 }
 
 // BREADCRUMB: Helper to check permission without hook (for use in filter)
+// Returns true if no permissions defined (owner sees all) or if canView is true for module
 function canViewModule(permissions: { module: string; canView: boolean }[] | undefined, module: string): boolean {
-  if (!permissions) return false
+  if (!permissions || permissions.length === 0) return true // No restrictions = show all
   const perm = permissions.find((p) => p.module === module)
-  return perm?.canView ?? false
+  return perm?.canView ?? true // Default to visible if not explicitly restricted
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
