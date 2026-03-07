@@ -13,7 +13,7 @@
 
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { mockInvoices, mockStableSettings } from "@/lib/mock"
 import type { Invoice, BillingLineItem } from "@/lib/types"
 
@@ -29,11 +29,13 @@ function notifyListeners() {
 export function useInvoices(): Invoice[] {
   const [, forceUpdate] = useState({})
 
-  useState(() => {
+  useEffect(() => {
     const listener = () => forceUpdate({})
     listeners.add(listener)
-    return () => listeners.delete(listener)
-  })
+    return () => {
+      listeners.delete(listener)
+    }
+  }, [])
 
   return globalInvoices
 }

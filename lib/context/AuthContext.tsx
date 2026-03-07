@@ -78,6 +78,7 @@ async function fetchUserProfile(
         role: "owner",
         permissions: defaultPermissions,
         stableId: undefined,
+        stableName: undefined,
       }
     }
   }

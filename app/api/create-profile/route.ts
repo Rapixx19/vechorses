@@ -29,12 +29,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "userId is required" }, { status: 400 })
   }
 
-  // Check if stable exists for this user
+  // Check if stable exists for this user (use maybeSingle to avoid error when no row found)
   const { data: stable } = await supabaseAdmin
     .from("stables")
     .select("id, stable_name")
     .eq("owner_user_id", userId)
-    .single()
+    .maybeSingle()
 
   const defaultPermissions = getDefaultPermissions("owner")
 

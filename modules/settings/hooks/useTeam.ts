@@ -11,7 +11,7 @@
 
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { mockTeamMembers, getDefaultPermissions } from "@/lib/mock"
 import type { TeamMember, ModulePermission, UserRole } from "@/lib/types"
 
@@ -26,11 +26,13 @@ function notifyListeners() {
 export function useTeam(): TeamMember[] {
   const [, forceUpdate] = useState({})
 
-  useState(() => {
+  useEffect(() => {
     const listener = () => forceUpdate({})
     listeners.add(listener)
-    return () => listeners.delete(listener)
-  })
+    return () => {
+      listeners.delete(listener)
+    }
+  }, [])
 
   return globalTeam
 }

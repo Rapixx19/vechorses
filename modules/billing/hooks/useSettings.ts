@@ -13,7 +13,7 @@
 
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { mockStableSettings } from "@/lib/mock"
 import type { StableSettings } from "@/lib/types"
 
@@ -29,11 +29,13 @@ export function useSettings(): StableSettings {
   const [, forceUpdate] = useState({})
 
   // Subscribe to updates
-  useState(() => {
+  useEffect(() => {
     const listener = () => forceUpdate({})
     listeners.add(listener)
-    return () => listeners.delete(listener)
-  })
+    return () => {
+      listeners.delete(listener)
+    }
+  }, [])
 
   return globalSettings
 }
