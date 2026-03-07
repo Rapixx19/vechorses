@@ -142,17 +142,17 @@ export function CalendarPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Calendar</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Calendar</h1>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* View Mode Toggle */}
           <div className="flex rounded-lg overflow-hidden bg-[var(--bg-surface)] border border-[var(--border)]">
             {(["month", "week", "day"] as CalendarViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => { setViewMode(mode); setShowWeekOverview(false) }}
-                className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
+                className={`px-3 sm:px-4 py-2 min-h-[44px] text-xs sm:text-sm font-medium capitalize transition-colors ${
                   viewMode === mode && !showWeekOverview
                     ? "bg-[var(--green-primary)] text-white"
                     : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -163,32 +163,32 @@ export function CalendarPage() {
             ))}
             <button
               onClick={() => setShowWeekOverview(!showWeekOverview)}
-              className={`px-4 py-2 text-sm font-medium flex items-center gap-1 transition-colors ${
+              className={`px-3 sm:px-4 py-2 min-h-[44px] text-xs sm:text-sm font-medium flex items-center gap-1 transition-colors ${
                 showWeekOverview
                   ? "bg-[var(--green-primary)] text-white"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               }`}
             >
               <ClipboardList className="h-4 w-4" />
-              Tasks
+              <span className="hidden sm:inline">Tasks</span>
             </button>
           </div>
 
-          {/* Integration Buttons */}
-          <button onClick={showComingSoon} className="btn btn-ghost">
+          {/* Integration Buttons - Hidden on mobile */}
+          <button onClick={showComingSoon} className="hidden lg:flex btn btn-ghost">
             <Calendar className="h-4 w-4" />
             Connect Google
           </button>
-          <button onClick={showComingSoon} className="btn btn-ghost">
+          <button onClick={showComingSoon} className="hidden lg:flex btn btn-ghost">
             <Calendar className="h-4 w-4" />
             Connect Outlook
           </button>
 
           {/* Add Event Button */}
           {canEdit && (
-            <button onClick={handleAddEvent} className="btn btn-primary">
+            <button onClick={handleAddEvent} className="btn btn-primary min-h-[44px]">
               <Plus className="h-4 w-4" />
-              Add Event
+              <span className="hidden sm:inline">Add Event</span>
             </button>
           )}
         </div>
@@ -196,8 +196,8 @@ export function CalendarPage() {
 
       {/* Staff Filter Bar */}
       {staff.length > 0 && (
-        <div className="card p-3">
-          <p className="text-xs text-[var(--text-muted)] mb-2">Filter by staff member</p>
+        <div className="card p-2 sm:p-3 overflow-x-auto">
+          <p className="text-xs text-[var(--text-muted)] mb-2">Filter by staff</p>
           <StaffFilterBar
             staff={staff}
             selectedStaffId={selectedStaffId}

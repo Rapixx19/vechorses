@@ -136,11 +136,11 @@ export default function DashboardPage() {
           <Skeleton className="h-10 w-28" />
           <Skeleton className="h-10 w-28" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Skeleton className="h-28" />
-          <Skeleton className="h-28" />
-          <Skeleton className="h-28" />
-          <Skeleton className="h-28" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+          <Skeleton className="h-24 sm:h-28" />
+          <Skeleton className="h-24 sm:h-28" />
+          <Skeleton className="h-24 sm:h-28" />
+          <Skeleton className="h-24 sm:h-28" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Skeleton className="h-48" />
@@ -170,8 +170,8 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <QuickActions onGenerateInvoice={handleGenerateInvoice} />
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Stat Cards - 2x2 on mobile, 4 cols on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <AnimatedStatCard
           title="Active Horses"
           value={safeHorses.filter((h) => h.isActive).length}

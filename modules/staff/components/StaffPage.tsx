@@ -36,7 +36,7 @@ function StaffPageSkeleton() {
         <Skeleton className="h-8 w-20" />
         <Skeleton className="h-10 w-36" />
       </div>
-      <div className="card p-4 grid grid-cols-4 gap-4">
+      <div className="card p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i}>
             <Skeleton className="h-8 w-12 mb-1" />
@@ -77,40 +77,41 @@ export function StaffPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Staff</h1>
-        <button onClick={() => setModalState({ type: "form" })} className="btn btn-primary">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Staff</h1>
+        <button onClick={() => setModalState({ type: "form" })} className="btn btn-primary min-h-[44px]">
           <UserPlus className="h-4 w-4" />
-          Add Staff Member
+          <span className="hidden sm:inline">Add Staff Member</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
       {/* Stats Bar */}
-      <div className="card p-4 grid grid-cols-4 gap-4">
+      <div className="card p-3 sm:p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div>
-          <p className="text-2xl font-bold text-[var(--text-primary)]">{totalStaff}</p>
-          <p className="text-sm text-[var(--text-muted)]">Total Staff</p>
+          <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{totalStaff}</p>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">Total Staff</p>
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500" />
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{workingNow}</p>
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{workingNow}</p>
           </div>
-          <p className="text-sm text-[var(--text-muted)]">Working Now</p>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">Working Now</p>
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-yellow-500" />
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{onVacation}</p>
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{onVacation}</p>
           </div>
-          <p className="text-sm text-[var(--text-muted)]">On Vacation</p>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">On Vacation</p>
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-gray-500" />
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{dayOff}</p>
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-gray-500" />
+            <p className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{dayOff}</p>
           </div>
-          <p className="text-sm text-[var(--text-muted)]">Day Off</p>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">Day Off</p>
         </div>
       </div>
 

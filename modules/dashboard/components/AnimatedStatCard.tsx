@@ -197,13 +197,13 @@ export function AnimatedStatCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: delay * 0.1 }}
-      className="rounded-lg px-4 py-3 border border-[var(--border)] bg-gradient-to-br from-[#1A1A2E]/50 to-transparent"
+      className="rounded-lg px-3 py-2 sm:px-4 sm:py-3 border border-[var(--border)] bg-gradient-to-br from-[#1A1A2E]/50 to-transparent"
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-[var(--text-muted)]">{title}</span>
         <Icon className="h-4 w-4 opacity-60" style={{ color: accentColor }} />
       </div>
-      <div className="text-xl font-semibold" style={{ color: accentColor }}>
+      <div className="text-lg sm:text-xl font-semibold" style={{ color: accentColor }}>
         {variant === "billing" ? `€${animatedValue.toLocaleString()}` : animatedValue}
       </div>
       {subtitle && !variant && (

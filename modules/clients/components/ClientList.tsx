@@ -65,11 +65,12 @@ export function ClientList() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-[var(--text-muted)]">{activeClients.length} clients</p>
-        <Link href="/clients/new" className="btn btn-primary">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[var(--text-muted)] text-sm">{activeClients.length} clients</p>
+        <Link href="/clients/new" className="btn btn-primary min-h-[44px]">
           <Plus className="h-4 w-4" />
-          Add Client
+          <span className="hidden sm:inline">Add Client</span>
+          <span className="sm:hidden">Add</span>
         </Link>
       </div>
 
@@ -81,7 +82,7 @@ export function ClientList() {
           placeholder="Search by name or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="input pl-10"
+          className="input pl-10 min-h-[44px]"
         />
       </div>
 

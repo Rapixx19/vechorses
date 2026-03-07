@@ -149,17 +149,17 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       {/* Header with Actions */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Billing</h2>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setShowClientPicker(true)} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
-            <FileText className="h-4 w-4" />Generate Bill
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Billing</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={() => setShowClientPicker(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-3 min-h-[44px] rounded-md text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
+            <FileText className="h-4 w-4" /><span className="hidden sm:inline">Generate</span> Bill
           </button>
-          <button onClick={handleGenerateAllInvoices} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-blue-900/30 text-blue-400 hover:bg-blue-900/50">
-            <FileText className="h-4 w-4" />Generate All Invoices
+          <button onClick={handleGenerateAllInvoices} className="hidden sm:flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-md text-sm font-medium bg-blue-900/30 text-blue-400 hover:bg-blue-900/50">
+            <FileText className="h-4 w-4" />Generate All
           </button>
-          <button onClick={handleExportCsv} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-            <Download className="h-4 w-4" />Export CSV
+          <button onClick={handleExportCsv} className="hidden sm:flex items-center gap-2 px-4 py-3 min-h-[44px] rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+            <Download className="h-4 w-4" />Export
           </button>
         </div>
       </div>
@@ -171,15 +171,15 @@ export default function BillingPage() {
       <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: "#1A1A2E" }}>
         <button
           onClick={() => setActiveTab("by_client")}
-          className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === "by_client" ? "bg-[#2C5F2E] text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+          className={`flex-1 px-3 sm:px-4 py-3 min-h-[44px] rounded-md text-xs sm:text-sm font-medium transition-colors ${activeTab === "by_client" ? "bg-[#2C5F2E] text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
         >
           By Client
         </button>
         <button
           onClick={() => setActiveTab("all_transactions")}
-          className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === "all_transactions" ? "bg-[#2C5F2E] text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+          className={`flex-1 px-3 sm:px-4 py-3 min-h-[44px] rounded-md text-xs sm:text-sm font-medium transition-colors ${activeTab === "all_transactions" ? "bg-[#2C5F2E] text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
         >
-          All Transactions
+          Transactions
         </button>
       </div>
 

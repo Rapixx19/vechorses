@@ -60,14 +60,14 @@ export function HorseDetail({ horseId }: HorseDetailProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">{horse.name}</h2>
-          <p className="text-[var(--text-muted)]">{horse.breed} · {horse.color}</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{horse.name}</h2>
+          <p className="text-sm text-[var(--text-muted)]">{horse.breed} · {horse.color}</p>
         </div>
         <Link
           href={`/horses/${horseId}/edit`}
-          className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538]"
+          className="flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538] active:bg-[#252538] w-full sm:w-auto"
         >
           <Pencil className="h-4 w-4" />
           Edit
@@ -75,12 +75,12 @@ export function HorseDetail({ horseId }: HorseDetailProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--border)]">
+      <div className="flex gap-1 border-b border-[var(--border)] overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
+            className={`px-4 py-3 min-h-[44px] text-sm font-medium -mb-px border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? "border-[#2C5F2E] text-[#2C5F2E]"
                 : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"

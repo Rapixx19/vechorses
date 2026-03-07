@@ -50,7 +50,7 @@ export function HorseCard({ horse, ownerName, stallLabel, pendingTaskCount }: Ho
 
   return (
     <Link href={`/horses/${horse.id}`}>
-      <div className="rounded-lg p-4 hover:bg-[#252538] transition-colors cursor-pointer" style={{ backgroundColor: "#1A1A2E" }}>
+      <div className="rounded-lg p-3 sm:p-4 hover:bg-[#252538] transition-colors cursor-pointer active:bg-[#252538] min-h-[80px]" style={{ backgroundColor: "#1A1A2E" }}>
         <div className="flex gap-3">
           {/* Avatar */}
           {photo ? (

@@ -72,7 +72,7 @@ export function HorseForm({ initialData, onSubmit, isEditing = false }: HorseFor
   // BREADCRUMB: Show only empty stalls + current horse's stall
   const availableStalls = stalls.filter((s) => !s.horseId || s.id === initialData?.stallId)
 
-  const inputClass = "w-full px-3 py-2 rounded-md bg-[#1A1A2E] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
+  const inputClass = "w-full px-3 py-3 min-h-[44px] rounded-md bg-[#1A1A2E] border border-[var(--border)] text-[var(--text-primary)] text-base focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
   const labelClass = "block text-sm font-medium text-[var(--text-primary)] mb-1"
   const errorClass = "text-xs text-red-400 mt-1"
 
@@ -129,7 +129,7 @@ export function HorseForm({ initialData, onSubmit, isEditing = false }: HorseFor
         <label className={labelClass}>Medical Notes</label>
         <textarea {...register("medicalNotes")} rows={3} className={inputClass} placeholder="Medical history..." />
       </div>
-      <button type="submit" className="px-6 py-2 rounded-md text-white font-medium" style={{ backgroundColor: "#2C5F2E" }}>
+      <button type="submit" className="w-full sm:w-auto px-6 py-3 min-h-[44px] rounded-md text-white font-medium" style={{ backgroundColor: "#2C5F2E" }}>
         {isEditing ? "Save Changes" : "Add Horse"}
       </button>
     </form>

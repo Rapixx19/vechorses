@@ -60,22 +60,22 @@ export function ClientDetail({ clientId }: ClientDetailProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">{client.fullName}</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{client.fullName}</h2>
         <div className="flex gap-2">
-          <button onClick={handleDeactivate} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-red-400 border border-red-400/30 hover:bg-red-400/10">
-            <UserX className="h-4 w-4" />Deactivate
+          <button onClick={handleDeactivate} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-md text-sm font-medium text-red-400 border border-red-400/30 hover:bg-red-400/10 active:bg-red-400/10">
+            <UserX className="h-4 w-4" /><span className="hidden sm:inline">Deactivate</span>
           </button>
-          <Link href={`/clients/${clientId}/edit`} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538]">
+          <Link href={`/clients/${clientId}/edit`} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538] active:bg-[#252538]">
             <Pencil className="h-4 w-4" />Edit
           </Link>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--border)]">
+      <div className="flex gap-1 border-b border-[var(--border)] overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${activeTab === tab.id ? "border-[#2C5F2E] text-[#2C5F2E]" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-3 min-h-[44px] text-sm font-medium -mb-px border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id ? "border-[#2C5F2E] text-[#2C5F2E]" : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>
             {tab.label}
           </button>
         ))}

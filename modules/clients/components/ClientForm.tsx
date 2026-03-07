@@ -57,7 +57,7 @@ export function ClientForm({ initialData, onSubmit, isEditing = false }: ClientF
     }
   }
 
-  const inputClass = "w-full px-3 py-2 rounded-md bg-[#1A1A2E] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
+  const inputClass = "w-full px-3 py-3 min-h-[44px] rounded-md bg-[#1A1A2E] border border-[var(--border)] text-[var(--text-primary)] text-base focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
   const labelClass = "block text-sm font-medium text-[var(--text-primary)] mb-1"
   const errorClass = "text-xs text-red-400 mt-1"
 
@@ -71,12 +71,12 @@ export function ClientForm({ initialData, onSubmit, isEditing = false }: ClientF
         </div>
         <div>
           <label className={labelClass}>Email *</label>
-          <input type="email" {...register("email")} className={inputClass} placeholder="john@example.com" />
+          <input type="email" inputMode="email" autoComplete="email" {...register("email")} className={inputClass} placeholder="john@example.com" />
           {errors.email && <p className={errorClass}>{errors.email.message}</p>}
         </div>
         <div>
           <label className={labelClass}>Phone *</label>
-          <input {...register("phone")} className={inputClass} placeholder="+39 123 456 7890" />
+          <input type="tel" inputMode="tel" autoComplete="tel" {...register("phone")} className={inputClass} placeholder="+39 123 456 7890" />
           {errors.phone && <p className={errorClass}>{errors.phone.message}</p>}
         </div>
       </div>
@@ -89,7 +89,7 @@ export function ClientForm({ initialData, onSubmit, isEditing = false }: ClientF
         </div>
         <div>
           <label className={labelClass}>Phone</label>
-          <input {...register("emergencyContactPhone")} className={inputClass} placeholder="Emergency contact phone" />
+          <input type="tel" inputMode="tel" {...register("emergencyContactPhone")} className={inputClass} placeholder="Emergency contact phone" />
         </div>
       </div>
 
@@ -100,14 +100,14 @@ export function ClientForm({ initialData, onSubmit, isEditing = false }: ClientF
 
       {!isEditing && (
         <div className="flex items-start gap-3 p-4 rounded-md border border-[var(--border)]">
-          <input type="checkbox" {...register("gdprConsent")} className="mt-1" />
+          <input type="checkbox" {...register("gdprConsent")} className="mt-1 w-5 h-5 min-w-[20px]" />
           <label className="text-sm text-[var(--text-muted)]">
             I consent to my personal data being stored for stable management purposes *
           </label>
         </div>
       )}
 
-      <button type="submit" className="px-6 py-2 rounded-md text-white font-medium" style={{ backgroundColor: "#2C5F2E" }}>
+      <button type="submit" className="w-full sm:w-auto px-6 py-3 min-h-[44px] rounded-md text-white font-medium" style={{ backgroundColor: "#2C5F2E" }}>
         {isEditing ? "Save Changes" : "Add Client"}
       </button>
     </form>

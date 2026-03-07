@@ -70,11 +70,12 @@ export function HorseList() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-[var(--text-muted)]">{horses.length} horses</p>
-        <Link href="/horses/new" className="btn btn-primary">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[var(--text-muted)] text-sm">{horses.length} horses</p>
+        <Link href="/horses/new" className="btn btn-primary min-h-[44px]">
           <Plus className="h-4 w-4" />
-          Add Horse
+          <span className="hidden sm:inline">Add Horse</span>
+          <span className="sm:hidden">Add</span>
         </Link>
       </div>
 
@@ -86,7 +87,7 @@ export function HorseList() {
           placeholder="Search by name or breed..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="input pl-10"
+          className="input pl-10 min-h-[44px]"
         />
       </div>
 

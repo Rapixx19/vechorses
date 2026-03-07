@@ -33,7 +33,7 @@ export function QuickActions({ onGenerateInvoice }: QuickActionsProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="flex flex-wrap gap-2"
+      className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2"
     >
       {actions.map((action, i) => {
         const Icon = action.icon
@@ -46,7 +46,7 @@ export function QuickActions({ onGenerateInvoice }: QuickActionsProps) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.1 * i }}
               onClick={onGenerateInvoice}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-[#1A1A2E] text-gray-300 hover:text-white transition-colors border border-transparent hover:border-gray-700"
+              className="flex items-center justify-center gap-2 px-3 py-3 min-h-[44px] rounded-lg text-sm font-medium bg-[#1A1A2E] text-gray-300 hover:text-white transition-colors border border-transparent hover:border-gray-700"
             >
               <Icon className="h-4 w-4" style={{ color: action.color }} />
               {action.label}
@@ -60,7 +60,7 @@ export function QuickActions({ onGenerateInvoice }: QuickActionsProps) {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: 0.1 * i }}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-[#1A1A2E] text-gray-300 hover:text-white transition-colors border border-transparent hover:border-gray-700 cursor-pointer"
+              className="flex items-center justify-center gap-2 px-3 py-3 min-h-[44px] rounded-lg text-sm font-medium bg-[#1A1A2E] text-gray-300 hover:text-white transition-colors border border-transparent hover:border-gray-700 cursor-pointer"
             >
               <Icon className="h-4 w-4" style={{ color: action.color }} />
               {action.label}

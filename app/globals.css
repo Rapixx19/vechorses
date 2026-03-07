@@ -49,10 +49,30 @@
   --topbar-height: 56px;
 }
 
+/* Mobile-first globals */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-feature-settings: "rlig" 1, "calt" 1;
+  overflow-x: hidden;
+}
+
+/* Safe area support for iPhone */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Mobile bottom nav height */
+:root {
+  --bottom-nav-height: 60px;
 }
 
 /* Skeleton shimmer animation */

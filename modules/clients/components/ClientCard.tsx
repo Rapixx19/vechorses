@@ -31,7 +31,7 @@ export function ClientCard({ client, horseCount, billingItems }: ClientCardProps
 
   return (
     <Link href={`/clients/${client.id}`}>
-      <div className="rounded-lg p-4 hover:bg-[#252538] transition-colors cursor-pointer" style={{ backgroundColor: "#1A1A2E" }}>
+      <div className="rounded-lg p-3 sm:p-4 hover:bg-[#252538] active:bg-[#252538] transition-colors cursor-pointer min-h-[80px]" style={{ backgroundColor: "#1A1A2E" }}>
         <div className="flex gap-3">
           {client.photoUrl ? (
             <img src={client.photoUrl} alt={client.fullName} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
