@@ -68,6 +68,50 @@ export interface ClientDocument {
   notes?: string
 }
 
+// BREADCRUMB: Document categories grouped by entity type
+export type DocumentCategory =
+  | "stable_license"
+  | "stable_insurance"
+  | "stable_contract"
+  | "horse_passport"
+  | "horse_vaccination"
+  | "horse_insurance"
+  | "horse_medical"
+  | "client_contract"
+  | "client_insurance"
+  | "client_invoice"
+  | "staff_contract"
+  | "staff_certification"
+  | "financial_report"
+  | "compliance_audit"
+  | "other"
+
+export type DocumentEntityType = "stable" | "horse" | "client" | "staff"
+
+export type DocumentStatus = "valid" | "expiring" | "expired"
+
+export interface Document {
+  id: string
+  stableId: string
+  entityType: DocumentEntityType
+  entityId: string
+  name: string
+  title?: string
+  category: DocumentCategory
+  fileUrl: string | null
+  fileSize: string | null
+  documentDate: string | null
+  expiryDate: string | null
+  issuedBy: string | null
+  referenceNumber: string | null
+  tags: string[]
+  notes: string | null
+  uploadedBy: string | null
+  uploadedAt: string
+  aiSummary: string | null
+  status: DocumentStatus
+}
+
 export type StallType = "standard" | "large" | "paddock"
 
 export interface Stall {
