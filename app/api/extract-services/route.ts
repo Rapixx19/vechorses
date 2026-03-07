@@ -2,14 +2,18 @@
  * FILE: app/api/extract-services/route.ts
  * ZONE: Yellow
  * PURPOSE: API endpoint to call Claude for extracting services from PDF documents
- * EXPORTS: POST
+ * EXPORTS: POST, maxDuration, dynamic
  * DEPENDS ON: Anthropic API
  * CONSUMED BY: PdfImporter component
  * TESTS: app/api/extract-services/route.test.ts
- * LAST CHANGED: 2026-03-07 — Fixed with beta header for PDF support and detailed error logging
+ * LAST CHANGED: 2026-03-07 — Fixed body size limit for large PDFs
  */
 
 import { NextRequest, NextResponse } from "next/server"
+
+// BREADCRUMB: Route config for large PDF uploads - required for Vercel
+export const maxDuration = 60
+export const dynamic = "force-dynamic"
 
 // BREADCRUMB: System prompt for extracting services from horse stable price lists
 const SYSTEM_PROMPT = `You are an expert at extracting service price lists from horse stable documents in any language (Italian, German, French, Spanish, English).
@@ -63,11 +67,27 @@ Return ONLY valid JSON, no markdown:
 export async function POST(request: NextRequest) {
   // Log environment check
   console.log("API KEY EXISTS:", !!process.env.ANTHROPIC_API_KEY)
-  console.log("API KEY LENGTH:", process.env.ANTHROPIC_API_KEY?.length)
+  console.log("API KEY PREFIX:", process.env.ANTHROPIC_API_KEY?.substring(0, 10))
   console.log("FALLBACK KEY EXISTS:", !!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY)
 
   try {
-    const { pdfBase64 } = await request.json()
+    // BREADCRUMB: Parse body manually to handle large PDFs and provide better error messages
+    const body = await request.text()
+    console.log("Request body size:", body.length)
+
+    let parsed: { pdfBase64?: string }
+    try {
+      parsed = JSON.parse(body)
+    } catch (e) {
+      console.error("Body parse error:", e)
+      return NextResponse.json(
+        { error: "Failed to parse request body" },
+        { status: 400 }
+      )
+    }
+
+    const { pdfBase64 } = parsed
+    console.log("PDF base64 length:", pdfBase64?.length || 0)
 
     if (!pdfBase64) {
       return NextResponse.json({ error: "No PDF data provided" }, { status: 400 })
