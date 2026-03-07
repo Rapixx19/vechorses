@@ -11,9 +11,12 @@
 
 // BREADCRUMB: Module boundary — only export from here, never import subfolders directly
 
-export { useStalls, useAddStall, type AddStallInput } from "./hooks/useStalls"
+export { useStalls, useAddStall, useUpdateStall, useDeleteStall, type AddStallInput } from "./hooks/useStalls"
 export { StallCell } from "./components/StallCell"
+export { StallCard } from "./components/StallCard"
 export { StallGrid } from "./components/StallGrid"
 export { StallSheet } from "./components/StallSheet"
 export { AssignHorseSheet } from "./components/AssignHorseSheet"
 export { StallSummary } from "./components/StallSummary"
+export { StableStatsBar } from "./components/StableStatsBar"
+export { StableBuilder } from "./components/StableBuilder"

@@ -76,6 +76,11 @@ export interface Stall {
   type: StallType
   horseId: string | null
   notes: string
+  position: number
+  rowIndex: number
+  colIndex: number
+  gridCols: number
+  isMaintenance: boolean
 }
 
 export type TaskType = "feeding" | "medication" | "farrier" | "vet" | "other"
