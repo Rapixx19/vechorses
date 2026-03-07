@@ -6,7 +6,7 @@
  * DEPENDS ON: lib/types.ts, lucide-react
  * CONSUMED BY: ServiceGrid
  * TESTS: modules/services/tests/PdfImporter.test.tsx
- * LAST CHANGED: 2026-03-07 — Improved for Italian/Swiss price lists with irregular formatting
+ * LAST CHANGED: 2026-03-07 — Updated to send PDF as base64 to server
  */
 
 "use client"
@@ -28,112 +28,6 @@ interface ExtractionResult {
 interface PdfImporterProps {
   onClose: () => void
   onImport: (services: Omit<Service, "id" | "createdAt">[]) => void
-}
-
-// BREADCRUMB: System prompt for Claude API - handles Italian/Swiss/German stable documents
-const SYSTEM_PROMPT = `You are an expert at extracting service price lists from horse stable documents. Documents may be in Italian, German, French, Spanish, or English.
-
-EXTRACTION RULES:
-1. Extract EVERY service/product line item
-2. Handle Swiss number format: 1'365.00 → 136500 (cents)
-3. Handle European format: 1.365,00 → 136500 (cents)
-4. Handle standard format: 1365.00 → 136500 (cents)
-5. All prices stored as INTEGER CENTS
-6. If price says "da definire" or "TBD" or "auf Anfrage" → use 0
-7. Currency: detect CHF, EUR, USD, GBP etc.
-8. Duration/unit: extract "al mese", "a volta", "per anno", "al giorno", "50 min" as unitLabel
-9. IVA/VAT %: extract if present as vatRate number
-10. Multi-price services: create separate entry for each price point (e.g., monthly AND daily rates)
-11. Translate names to English, keep original in originalName
-
-CATEGORY MAPPING:
-- Pensione cavallo/Pferdepension/Horse boarding → boarding
-- Lezione/Unterricht/Lesson → lessons
-- Lavoro alla corda/Longe/Lunging → training
-- Lavoro cavallo montato/Reitarbeit → training
-- Maniscalco/Ferratura/Hufschmied/Farrier → farrier
-- Veterinario/Tierarzt/Vet → vet
-- Tosatura/Scheren/Grooming → grooming
-- Trasporti/Transport → other
-- Concorsi/Turniere/Competition → competitions
-- Pascoli/Weide/Pasture → boarding
-- Fieno/Mangime/Heu/Futter/Feed → feed
-- Giostra/Führanlage/Horse walker → training
-- Arena/Halle/Indoor arena → training
-
-Return ONLY this exact JSON format:
-{
-  "services": [
-    {
-      "name": "Horse Boarding",
-      "originalName": "Pensione cavallo",
-      "description": "Monthly horse boarding",
-      "category": "boarding",
-      "price": 136500,
-      "currency": "CHF",
-      "unit": "per_month",
-      "unitLabel": "month",
-      "vatRate": 8.1
-    }
-  ],
-  "detectedLanguage": "Italian",
-  "currency": "CHF",
-  "confidence": "high"
-}
-
-IMPORTANT: Return ONLY the JSON object.
-No markdown, no explanation, no code blocks.
-Do not wrap in \`\`\`json code blocks.`
-
-// BREADCRUMB: Extract JSON from response text, handles markdown code blocks
-function extractJsonFromText(text: string): string {
-  const trimmed = text.trim()
-
-  // If already starts with {, return as-is
-  if (trimmed.startsWith("{")) return trimmed
-
-  // Try to find JSON in markdown code blocks
-  const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (codeBlockMatch) return codeBlockMatch[1].trim()
-
-  // Try to find JSON object directly
-  const jsonMatch = trimmed.match(/\{[\s\S]*\}/)
-  if (jsonMatch) return jsonMatch[0]
-
-  return trimmed
-}
-
-// BREADCRUMB: Parse Claude API response with error recovery
-function parseExtractionResult(responseText: string): ExtractionResult {
-  const jsonText = extractJsonFromText(responseText)
-
-  try {
-    const parsed = JSON.parse(jsonText)
-
-    // Validate and normalize services
-    const services: ExtractedService[] = (parsed.services || []).map((s: Record<string, unknown>) => ({
-      name: String(s.name || "Unknown Service"),
-      originalName: s.originalName ? String(s.originalName) : undefined,
-      description: String(s.description || ""),
-      category: validateCategory(String(s.category || "other")),
-      price: typeof s.price === "number" ? Math.round(s.price) : 0,
-      currency: String(s.currency || parsed.currency || "EUR"),
-      unit: validateUnit(String(s.unit || "per_session")),
-      unitLabel: s.unitLabel ? String(s.unitLabel) : undefined,
-      vatRate: typeof s.vatRate === "number" ? s.vatRate : undefined,
-      isActive: true,
-    }))
-
-    return {
-      services,
-      detectedLanguage: String(parsed.detectedLanguage || "Unknown"),
-      detectedCurrency: String(parsed.currency || services[0]?.currency || "EUR"),
-      confidence: validateConfidence(parsed.confidence),
-    }
-  } catch {
-    // Return error with raw response for debugging
-    throw new ParseError("Failed to parse extraction result", responseText)
-  }
 }
 
 class ParseError extends Error {
@@ -177,47 +71,67 @@ function validateConfidence(conf: unknown): "high" | "medium" | "low" {
   return "medium"
 }
 
-// BREADCRUMB: Call Claude API to extract services from PDF text
-async function extractServicesFromPdf(file: File): Promise<ExtractionResult> {
-  // Extract text from PDF using browser FileReader
-  const arrayBuffer = await file.arrayBuffer()
-  const textDecoder = new TextDecoder("utf-8")
-  const rawText = textDecoder.decode(arrayBuffer)
-
-  // Clean up PDF binary content - extract readable text, preserve numbers
-  const extractedText = rawText
-    .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t']/g, " ") // Keep apostrophe for Swiss numbers
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 15000) // Increased limit for longer price lists
-
-  if (extractedText.length < 50) {
-    throw new Error("Could not extract readable text from PDF. Try a text-based PDF.")
+// BREADCRUMB: Parse and validate API response
+function parseApiResponse(data: Record<string, unknown>): ExtractionResult {
+  // Check for error response
+  if (data.error) {
+    throw new ParseError(String(data.error), data.rawResponse ? String(data.rawResponse) : "")
   }
 
-  const userPrompt = `Extract all services and prices from this horse stable price list.
-The document may be in Italian, German, French, or English.
-Handle Swiss number format (1'365.00) and European format (1.365,00).
-Create separate entries for services with multiple price points.
-Translate names to English but keep originals.
-Return ONLY valid JSON, no markdown.
+  // Validate and normalize services
+  const services: ExtractedService[] = (Array.isArray(data.services) ? data.services : []).map((s: Record<string, unknown>) => ({
+    name: String(s.name || "Unknown Service"),
+    originalName: s.originalName ? String(s.originalName) : undefined,
+    description: String(s.description || ""),
+    category: validateCategory(String(s.category || "other")),
+    price: typeof s.price === "number" ? Math.round(s.price) : 0,
+    currency: String(s.currency || data.currency || "EUR"),
+    unit: validateUnit(String(s.unit || "per_session")),
+    unitLabel: s.unitLabel ? String(s.unitLabel) : undefined,
+    vatRate: typeof s.vatRate === "number" ? s.vatRate : undefined,
+    isActive: true,
+  }))
 
-Document content:
-${extractedText}`
+  return {
+    services,
+    detectedLanguage: String(data.detectedLanguage || "Unknown"),
+    detectedCurrency: String(data.currency || services[0]?.currency || "EUR"),
+    confidence: validateConfidence(data.confidence),
+  }
+}
+
+// BREADCRUMB: Convert File to base64 string
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      // Remove data URL prefix (data:application/pdf;base64,)
+      const base64 = result.split(",")[1]
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+// BREADCRUMB: Call server API to extract services from PDF
+async function extractServicesFromPdf(file: File): Promise<ExtractionResult> {
+  const pdfBase64 = await fileToBase64(file)
 
   const response = await fetch("/api/extract-services", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ systemPrompt: SYSTEM_PROMPT, userPrompt }),
+    body: JSON.stringify({ pdfBase64 }),
   })
 
+  const data = await response.json()
+
   if (!response.ok) {
-    const error = await response.text()
-    throw new Error(error || "Failed to analyze PDF")
+    throw new ParseError(data.error || "Failed to analyze PDF", data.rawResponse || "")
   }
 
-  const data = await response.json()
-  return parseExtractionResult(data.content)
+  return parseApiResponse(data)
 }
 
 export function PdfImporter({ onClose, onImport }: PdfImporterProps) {
