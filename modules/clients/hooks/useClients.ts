@@ -40,6 +40,52 @@ interface UseClientsReturn {
   refetch: () => void
 }
 
+// Input type for creating a client
+export interface CreateClientInput {
+  fullName: string
+  email: string
+  phone: string
+  emergencyContactName: string
+  emergencyContactPhone: string
+  notes: string
+  gdprConsentAt?: string
+  gdprConsentVersion?: string
+}
+
+export function useCreateClient() {
+  const { currentUser } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
+
+  const addClient = async (input: CreateClientInput): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser?.stableId) {
+      console.error("createClient: no stableId")
+      return { success: false, error: "No stable ID found" }
+    }
+
+    const { error } = await supabase.from("clients").insert({
+      stable_id: currentUser.stableId,
+      full_name: input.fullName,
+      email: input.email,
+      phone: input.phone || null,
+      emergency_contact_name: input.emergencyContactName || null,
+      emergency_contact_phone: input.emergencyContactPhone || null,
+      notes: input.notes || null,
+      gdpr_consent_at: input.gdprConsentAt || null,
+      gdpr_consent_version: input.gdprConsentVersion || null,
+      is_active: true,
+    })
+
+    if (error) {
+      console.error("createClient error:", JSON.stringify(error))
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  }
+
+  return { addClient }
+}
+
 export function useClients(): UseClientsReturn {
   const { currentUser } = useAuth()
   const [clients, setClients] = useState<Client[]>([])

@@ -11,7 +11,7 @@
 
 // BREADCRUMB: Module boundary — only export from here, never import subfolders directly
 
-export { useClients } from "./hooks/useClients"
+export { useClients, useCreateClient, type CreateClientInput } from "./hooks/useClients"
 export { useClientDocuments } from "./hooks/useClientDocuments"
 export { ClientCard } from "./components/ClientCard"
 export { ClientList } from "./components/ClientList"
