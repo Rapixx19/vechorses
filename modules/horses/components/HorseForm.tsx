@@ -44,19 +44,7 @@ export function HorseForm({ initialData, onSubmit, isEditing = false }: HorseFor
   const { clients, isLoading: clientsLoading } = useClients()
   const { stalls, isLoading: stallsLoading } = useStalls()
 
-  const isLoading = clientsLoading || stallsLoading
-
-  // BREADCRUMB: Show only empty stalls + current horse's stall
-  const availableStalls = stalls.filter((s) => !s.horseId || s.id === initialData?.stallId)
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
-      </div>
-    )
-  }
-
+  // BREADCRUMB: All hooks must be called before any conditional returns (React rules of hooks)
   const { register, handleSubmit, formState: { errors } } = useForm<HorseFormData>({
     resolver: zodResolver(horseSchema),
     defaultValues: {
@@ -70,6 +58,19 @@ export function HorseForm({ initialData, onSubmit, isEditing = false }: HorseFor
       medicalNotes: initialData?.medicalNotes ?? "",
     },
   })
+
+  const isLoading = clientsLoading || stallsLoading
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
+
+  // BREADCRUMB: Show only empty stalls + current horse's stall
+  const availableStalls = stalls.filter((s) => !s.horseId || s.id === initialData?.stallId)
 
   const inputClass = "w-full px-3 py-2 rounded-md bg-[#1A1A2E] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
   const labelClass = "block text-sm font-medium text-[var(--text-primary)] mb-1"
