@@ -22,6 +22,7 @@ import {
   OccupancyBar,
   RecentBilling,
   OverdueTasks,
+  StaffToday,
 } from "@/modules/dashboard"
 
 export default function DashboardPage() {
@@ -84,6 +85,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <TaskChecklist tasks={tasks} horses={horses} />
         <OverdueTasks tasks={tasks} horses={horses} />
+      </div>
+
+      {/* Staff Today Widget */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <StaffToday />
       </div>
 
       {/* Recent Billing */}

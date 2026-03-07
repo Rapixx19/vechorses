@@ -220,7 +220,7 @@ export interface Service {
 
 // Auth & Team Management
 export type UserRole = "owner" | "manager" | "staff" | "custom"
-export type ModuleName = "dashboard" | "horses" | "clients" | "stalls" | "billing" | "services" | "settings"
+export type ModuleName = "dashboard" | "horses" | "clients" | "stalls" | "billing" | "services" | "settings" | "staff"
 
 export interface ModulePermission {
   module: ModuleName
@@ -249,4 +249,51 @@ export interface AuthUser {
   permissions: ModulePermission[]
   stableId?: string
   stableName?: string
+}
+
+// Staff Management Types
+export type StaffStatusDetail = "working" | "vacation" | "sick" | "day-off" | "training"
+export type ContractType = "full-time" | "part-time" | "freelance"
+export type TaskPriority = "low" | "medium" | "high" | "urgent"
+export type TaskStatus = "pending" | "in-progress" | "completed" | "cancelled"
+export type TaskCategory = "general" | "feeding" | "cleaning" | "medical" | "grooming" | "training" | "maintenance" | "other"
+
+export interface StaffMember {
+  id: string
+  fullName: string
+  email: string
+  phone?: string
+  address?: string
+  dateOfBirth?: string
+  startDate?: string
+  contractType: ContractType
+  statusDetail: StaffStatusDetail
+  vacationStart?: string
+  vacationEnd?: string
+  notes?: string
+  color?: string
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  role: UserRole
+  isActive: boolean
+  avatarUrl?: string
+  pendingTasksCount?: number
+}
+
+export interface StaffTask {
+  id: string
+  stableId: string
+  assignedTo: string
+  assignedBy?: string
+  title: string
+  description?: string
+  priority: TaskPriority
+  status: TaskStatus
+  dueDate?: string
+  dueTime?: string
+  completedAt?: string
+  category: TaskCategory
+  horseId?: string
+  horseName?: string
+  createdAt: string
 }
