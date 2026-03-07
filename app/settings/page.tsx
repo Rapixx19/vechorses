@@ -32,11 +32,13 @@ import type { Invoice, StableSettings } from "@/lib/types"
 type SettingsTab = "stable" | "billing" | "history" | "team"
 
 export default function SettingsPage() {
+  // All hooks must be called before any conditional returns
   const settings = useSettings()
   const updateSettings = useUpdateSettings()
   const invoices = useInvoices()
   const { clients, isLoading: clientsLoading } = useClients()
   const [activeTab, setActiveTab] = useState<SettingsTab>("stable")
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
 
   if (clientsLoading) {
     return (
@@ -45,7 +47,6 @@ export default function SettingsPage() {
       </div>
     )
   }
-  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
 
   const handleSave = (updates: Partial<StableSettings>) => {
     updateSettings(updates)

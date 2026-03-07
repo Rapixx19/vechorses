@@ -35,11 +35,18 @@ import type { BillingLineItem, BillingStatus, Client, Invoice } from "@/lib/type
 type ViewTab = "by_client" | "all_transactions"
 
 export default function BillingPage() {
+  // All hooks must be called before any conditional returns
   const billingItems = useBilling()
   const { clients, isLoading: clientsLoading } = useClients()
   const settings = useSettings()
   const createInvoice = useCreateInvoice()
   const [localItems, setLocalItems] = useState(billingItems)
+  const [activeTab, setActiveTab] = useState<ViewTab>("by_client")
+  const [filters, setFilters] = useState<BillingFilterState>({ search: "", status: "all", serviceType: "all", dateRange: "all" })
+  const [selectedItem, setSelectedItem] = useState<BillingLineItem | null>(null)
+  const [showNewForm, setShowNewForm] = useState(false)
+  const [preselectedClientId, setPreselectedClientId] = useState<string | null>(null)
+  const [invoiceClient, setInvoiceClient] = useState<{ client: Client; items: BillingLineItem[] } | null>(null)
 
   if (clientsLoading) {
     return (
@@ -48,12 +55,6 @@ export default function BillingPage() {
       </div>
     )
   }
-  const [activeTab, setActiveTab] = useState<ViewTab>("by_client")
-  const [filters, setFilters] = useState<BillingFilterState>({ search: "", status: "all", serviceType: "all", dateRange: "all" })
-  const [selectedItem, setSelectedItem] = useState<BillingLineItem | null>(null)
-  const [showNewForm, setShowNewForm] = useState(false)
-  const [preselectedClientId, setPreselectedClientId] = useState<string | null>(null)
-  const [invoiceClient, setInvoiceClient] = useState<{ client: Client; items: BillingLineItem[] } | null>(null)
 
   // BREADCRUMB: Group items by client for client-centric view
   const clientsWithItems = useMemo(() => {
