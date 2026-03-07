@@ -11,7 +11,7 @@
 
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { mockServices } from "@/lib/mock"
 import type { Service, ServiceCategory } from "@/lib/types"
 
@@ -26,11 +26,13 @@ function notifyListeners() {
 export function useServices(): Service[] {
   const [, forceUpdate] = useState({})
 
-  useState(() => {
+  useEffect(() => {
     const listener = () => forceUpdate({})
     listeners.add(listener)
-    return () => listeners.delete(listener)
-  })
+    return () => {
+      listeners.delete(listener)
+    }
+  }, [])
 
   return globalServices
 }
