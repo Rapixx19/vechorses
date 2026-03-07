@@ -18,6 +18,7 @@ export const mockInvoices: Invoice[] = [
     id: "inv-001",
     invoiceNumber: "INV-1001",
     clientId: "client-001",
+    recipientType: "client",
     lineItems: [
       { id: "li-001", clientId: "client-001", serviceType: "boarding", description: "Monthly boarding fee - January 2026", amountCents: 45000, currency: "EUR", status: "paid", serviceDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
     ],
@@ -35,6 +36,7 @@ export const mockInvoices: Invoice[] = [
     id: "inv-002",
     invoiceNumber: "INV-1002",
     clientId: "client-004",
+    recipientType: "client",
     lineItems: [
       { id: "li-002", clientId: "client-004", serviceType: "boarding", description: "Monthly boarding fee - January 2026", amountCents: 45000, currency: "EUR", status: "paid", serviceDate: "2026-01-01", createdAt: "2026-01-01T00:00:00Z" },
       { id: "li-003", clientId: "client-004", serviceType: "lesson", description: "Jumping lessons (4x)", amountCents: 24000, currency: "EUR", status: "paid", serviceDate: "2026-01-15", createdAt: "2026-01-15T00:00:00Z" },
@@ -53,6 +55,7 @@ export const mockInvoices: Invoice[] = [
     id: "inv-003",
     invoiceNumber: "INV-1003",
     clientId: "client-002",
+    recipientType: "client",
     lineItems: [
       { id: "li-004", clientId: "client-002", serviceType: "boarding", description: "Monthly boarding fee - February 2026 (2 horses)", amountCents: 90000, currency: "EUR", status: "invoiced", serviceDate: "2026-02-01", createdAt: "2026-02-01T00:00:00Z" },
       { id: "li-005", clientId: "client-002", serviceType: "farrier", description: "Corrective shoeing - therapeutic", amountCents: 18000, currency: "EUR", status: "invoiced", serviceDate: "2026-02-20", createdAt: "2026-02-20T10:00:00Z" },
@@ -70,6 +73,7 @@ export const mockInvoices: Invoice[] = [
     id: "inv-004",
     invoiceNumber: "INV-1004",
     clientId: "client-003",
+    recipientType: "client",
     lineItems: [
       { id: "li-006", clientId: "client-003", serviceType: "boarding", description: "Monthly boarding fee - February 2026 (3 horses)", amountCents: 135000, currency: "EUR", status: "invoiced", serviceDate: "2026-02-01", createdAt: "2026-02-01T00:00:00Z" },
     ],
@@ -86,6 +90,7 @@ export const mockInvoices: Invoice[] = [
     id: "inv-005",
     invoiceNumber: "INV-1005",
     clientId: "client-006",
+    recipientType: "client",
     lineItems: [
       { id: "li-007", clientId: "client-006", serviceType: "farrier", description: "Farrier visit - full set", amountCents: 12000, currency: "EUR", status: "pending", serviceDate: "2026-03-03", createdAt: "2026-03-03T11:00:00Z" },
     ],

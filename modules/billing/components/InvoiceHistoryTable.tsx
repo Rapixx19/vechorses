@@ -31,7 +31,10 @@ const statusColors: Record<string, string> = {
 export function InvoiceHistoryTable({ invoices, clients, onPreview, onDownload }: InvoiceHistoryTableProps) {
   const formatAmount = (cents: number) => `€${(cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
   const formatDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-  const getClientName = (clientId: string) => clients.find((c) => c.id === clientId)?.fullName || "Unknown"
+  const getClientName = (clientId: string | null) => {
+    if (!clientId) return "Custom Recipient"
+    return clients.find((c) => c.id === clientId)?.fullName || "Unknown"
+  }
 
   if (invoices.length === 0) {
     return (

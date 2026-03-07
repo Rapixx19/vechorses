@@ -6,23 +6,23 @@
  * DEPENDS ON: lib/types.ts
  * CONSUMED BY: InvoiceBuilder, generatePdf
  * TESTS: modules/billing/tests/InvoicePreview.test.tsx
- * LAST CHANGED: 2026-03-06 — Initial creation for Phase 7b
+ * LAST CHANGED: 2026-03-07 — Updated to use invoice.recipientInfo instead of client prop
  */
 
 // 🔴 RED ZONE — billing invoice preview, handle with care
 
-import type { Invoice, Client, StableSettings } from "@/lib/types"
+import type { Invoice, StableSettings } from "@/lib/types"
 
 interface InvoicePreviewProps {
   invoice: Invoice
-  client: Client
   settings: StableSettings
 }
 
 const formatAmount = (cents: number) => `€${(cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
 const formatDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
 
-export function InvoicePreview({ invoice, client, settings }: InvoicePreviewProps) {
+export function InvoicePreview({ invoice, settings }: InvoicePreviewProps) {
+  const recipient = invoice.recipientInfo
   return (
     <div id="invoice-preview" className="bg-white text-black p-8 min-h-[297mm] w-full max-w-[210mm] mx-auto font-sans text-sm">
       {/* Header */}
@@ -56,9 +56,20 @@ export function InvoicePreview({ invoice, client, settings }: InvoicePreviewProp
         </div>
         <div>
           <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Bill To</h3>
-          <p className="font-semibold">{client.fullName}</p>
-          <p>{client.email}</p>
-          <p>{client.phone}</p>
+          {recipient ? (
+            <>
+              <p className="font-semibold">{recipient.fullName}</p>
+              {recipient.companyName && <p>{recipient.companyName}</p>}
+              {recipient.email && <p>{recipient.email}</p>}
+              {recipient.address && <p>{recipient.address}</p>}
+              {(recipient.city || recipient.country) && (
+                <p>{[recipient.city, recipient.country].filter(Boolean).join(", ")}</p>
+              )}
+              {recipient.vatNumber && <p className="mt-2">VAT: {recipient.vatNumber}</p>}
+            </>
+          ) : (
+            <p className="text-gray-400 italic">No recipient specified</p>
+          )}
         </div>
       </div>
 

@@ -16,7 +16,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
-import type { Invoice, BillingLineItem, InvoiceStatus } from "@/lib/types"
+import type { Invoice, BillingLineItem, InvoiceStatus, RecipientType, RecipientInfo } from "@/lib/types"
 
 // DB row type from Supabase
 interface InvoiceRow {
@@ -34,6 +34,8 @@ interface InvoiceRow {
   due_date: string | null
   paid_date: string | null
   notes: string | null
+  recipient_type: string | null
+  recipient_info: RecipientInfo | null
   created_at: string | null
 }
 
@@ -77,7 +79,9 @@ export function useInvoices(): UseInvoicesReturn {
         const mapped: Invoice[] = (data || []).map((row: InvoiceRow) => ({
           id: row.id,
           invoiceNumber: row.invoice_number,
-          clientId: row.client_id || "",
+          clientId: row.client_id || null,
+          recipientType: (row.recipient_type as RecipientType) || "client",
+          recipientInfo: row.recipient_info || undefined,
           lineItems: row.line_items || [],
           subtotal: row.subtotal,
           tax: row.tax || undefined,
@@ -105,7 +109,9 @@ export function useInvoices(): UseInvoicesReturn {
 }
 
 interface CreateInvoiceInput {
-  clientId: string
+  clientId: string | null
+  recipientType: RecipientType
+  recipientInfo?: RecipientInfo
   lineItems: BillingLineItem[]
   invoiceNumber: string
   taxRate?: number
@@ -136,6 +142,8 @@ export function useCreateInvoice(): {
         .insert({
           stable_id: currentUser.stableId,
           client_id: input.clientId,
+          recipient_type: input.recipientType,
+          recipient_info: input.recipientInfo || null,
           invoice_number: input.invoiceNumber,
           line_items: input.lineItems,
           subtotal,
@@ -159,7 +167,9 @@ export function useCreateInvoice(): {
       const invoice: Invoice = {
         id: row.id,
         invoiceNumber: row.invoice_number,
-        clientId: row.client_id || "",
+        clientId: row.client_id || null,
+        recipientType: (row.recipient_type as RecipientType) || "client",
+        recipientInfo: row.recipient_info || undefined,
         lineItems: row.line_items || [],
         subtotal: row.subtotal,
         tax: row.tax || undefined,

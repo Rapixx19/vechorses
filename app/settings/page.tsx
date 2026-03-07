@@ -69,8 +69,6 @@ export default function SettingsPage() {
     { id: "team" as const, label: "Team", icon: Users },
   ]
 
-  const previewClient = previewInvoice ? clients.find((c) => c.id === previewInvoice.clientId) : null
-
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-[var(--text-primary)]">Settings</h2>
@@ -109,7 +107,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Invoice Preview Modal */}
-      {previewInvoice && previewClient && (
+      {previewInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setPreviewInvoice(null)}>
           <div className="relative max-h-[90vh] overflow-auto bg-white rounded-lg" onClick={(e) => e.stopPropagation()}>
             <button
@@ -119,7 +117,7 @@ export default function SettingsPage() {
               <X className="h-5 w-5" />
             </button>
             <div id="invoice-preview-modal">
-              <InvoicePreview invoice={previewInvoice} client={previewClient} settings={settings} />
+              <InvoicePreview invoice={previewInvoice} settings={settings} />
             </div>
           </div>
         </div>

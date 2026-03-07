@@ -144,11 +144,24 @@ export interface StableSettings {
 }
 
 export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled"
+export type RecipientType = "client" | "custom"
+
+export interface RecipientInfo {
+  fullName: string
+  companyName?: string
+  email?: string
+  address?: string
+  city?: string
+  country?: string
+  vatNumber?: string
+}
 
 export interface Invoice {
   id: string
   invoiceNumber: string
-  clientId: string
+  clientId: string | null
+  recipientType: RecipientType
+  recipientInfo?: RecipientInfo
   lineItems: BillingLineItem[]
   subtotal: number
   tax?: number
