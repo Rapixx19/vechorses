@@ -14,7 +14,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { FileText, Download, X } from "lucide-react"
+import { FileText, Download, X, Plus } from "lucide-react"
 import {
   useBilling,
   useSettings,
@@ -47,7 +47,7 @@ export default function BillingPage() {
   const [filters, setFilters] = useState<BillingFilterState>({ search: "", status: "all", serviceType: "all", dateRange: "all" })
   const [selectedItem, setSelectedItem] = useState<BillingLineItem | null>(null)
   const [showClientPicker, setShowClientPicker] = useState(false)
-  const [invoiceClient, setInvoiceClient] = useState<{ client: Client; items: BillingLineItem[] } | null>(null)
+  const [invoiceClient, setInvoiceClient] = useState<{ client: Client | null; items: BillingLineItem[] } | null>(null)
 
   // BREADCRUMB: All hooks must be called before any conditional returns (React rules of hooks)
   // Group items by client for client-centric view
@@ -115,6 +115,11 @@ export default function BillingPage() {
   const handleGenerateBill = (client: Client) => {
     const clientItems = localItems.filter((i) => i.clientId === client.id && i.status === "pending")
     setInvoiceClient({ client, items: clientItems })
+    setShowClientPicker(false)
+  }
+
+  const handleSelectCustomRecipient = () => {
+    setInvoiceClient({ client: null, items: [] })
     setShowClientPicker(false)
   }
 
@@ -207,6 +212,22 @@ export default function BillingPage() {
             <h3 className="font-semibold text-lg text-[var(--text-primary)] mb-4">Select Client</h3>
             <p className="text-sm text-[var(--text-muted)] mb-6">Choose a client to generate an invoice for</p>
             <div className="space-y-2">
+              {/* Custom Recipient Option */}
+              <div
+                onClick={handleSelectCustomRecipient}
+                className="p-4 border border-dashed border-gray-600 rounded-lg mb-3 cursor-pointer hover:border-green-500 hover:bg-[#1A1A2E] transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-[var(--text-primary)] font-medium">Custom Recipient</p>
+                    <p className="text-[var(--text-muted)] text-sm">Bill someone not in your client list</p>
+                  </div>
+                </div>
+              </div>
+
               {clients.filter((c) => c.isActive).map((client) => {
                 const pendingCount = localItems.filter((i) => i.clientId === client.id && i.status === "pending").length
                 return (
@@ -232,7 +253,7 @@ export default function BillingPage() {
 
       {invoiceClient && (
         <InvoiceBuilder
-          clientId={invoiceClient.client.id}
+          clientId={invoiceClient.client?.id || null}
           client={invoiceClient.client}
           lineItems={invoiceClient.items}
           settings={settings}
@@ -240,7 +261,9 @@ export default function BillingPage() {
           onSave={() => {
             // Invoice is created by InvoiceBuilder via useCreateInvoice hook
             // Mark included line items as invoiced in local state
-            setLocalItems((prev) => prev.map((i) => (invoiceClient.items.some((ii) => ii.id === i.id) ? { ...i, status: "invoiced" as const } : i)))
+            if (invoiceClient.items.length > 0) {
+              setLocalItems((prev) => prev.map((i) => (invoiceClient.items.some((ii) => ii.id === i.id) ? { ...i, status: "invoiced" as const } : i)))
+            }
             setInvoiceClient(null)
           }}
         />

@@ -178,18 +178,18 @@ export function InvoiceBuilder({ clientId: initialClientId, client: initialClien
             {/* Recipient Toggle */}
             <div>
               <label className={labelClass}>Bill To</label>
-              <div className="flex gap-1 p-1 rounded-lg bg-[#1A1A2E] mb-3">
+              <div className="flex gap-2 mb-4">
                 <button
                   type="button"
                   onClick={() => setRecipientType("client")}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${recipientType === "client" ? "bg-[#2C5F2E] text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+                  className={recipientType === "client" ? "flex-1 flex items-center justify-center gap-2 bg-[#2C5F2E] text-white px-4 py-2 rounded text-sm font-medium" : "flex-1 flex items-center justify-center gap-2 bg-[#252538] text-gray-300 px-4 py-2 rounded text-sm font-medium hover:bg-[#303050]"}
                 >
                   <User className="h-4 w-4" />Existing Client
                 </button>
                 <button
                   type="button"
                   onClick={() => setRecipientType("custom")}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${recipientType === "custom" ? "bg-[#2C5F2E] text-white" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+                  className={recipientType === "custom" ? "flex-1 flex items-center justify-center gap-2 bg-[#2C5F2E] text-white px-4 py-2 rounded text-sm font-medium" : "flex-1 flex items-center justify-center gap-2 bg-[#252538] text-gray-300 px-4 py-2 rounded text-sm font-medium hover:bg-[#303050]"}
                 >
                   <Building2 className="h-4 w-4" />Custom Recipient
                 </button>
