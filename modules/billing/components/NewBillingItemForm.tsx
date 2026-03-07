@@ -41,7 +41,7 @@ interface NewBillingItemFormProps {
 const serviceTypeMap: Record<string, ServiceType> = { boarding: "boarding", lessons: "lesson", farrier: "farrier", vet: "vet", grooming: "other", training: "other", competitions: "other", feed: "other", other: "other" }
 
 export function NewBillingItemForm({ clients, preselectedClientId, onSubmit, onClose }: NewBillingItemFormProps) {
-  const services = useServices()
+  const { services } = useServices()
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { clientId: preselectedClientId || "", serviceType: "boarding", notes: "", serviceDate: new Date().toISOString().split("T")[0] },

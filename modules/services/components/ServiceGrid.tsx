@@ -6,13 +6,13 @@
  * DEPENDS ON: ServiceCard, useServices, lib/types.ts, lucide-react
  * CONSUMED BY: app/services/page.tsx
  * TESTS: modules/services/tests/ServiceGrid.test.tsx
- * LAST CHANGED: 2026-03-06 — Initial creation for service management
+ * LAST CHANGED: 2026-03-07 — V2: Updated for async Supabase hooks
  */
 
 "use client"
 
 import { useState } from "react"
-import { Plus, FileUp } from "lucide-react"
+import { Plus, FileUp, Loader2 } from "lucide-react"
 import { ServiceCard } from "./ServiceCard"
 import { ServiceForm } from "./ServiceForm"
 import { PdfImporter } from "./PdfImporter"
@@ -33,10 +33,10 @@ const categories: { id: ServiceCategory | "all"; label: string }[] = [
 ]
 
 export function ServiceGrid() {
-  const services = useServices()
-  const addService = useAddService()
-  const updateService = useUpdateService()
-  const deleteService = useDeleteService()
+  const { services, isLoading, refetch } = useServices()
+  const { addService, isAdding } = useAddService()
+  const { updateService } = useUpdateService()
+  const { deleteService } = useDeleteService()
   const [activeCategory, setActiveCategory] = useState<ServiceCategory | "all">("all")
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -46,10 +46,40 @@ export function ServiceGrid() {
   const getCategoryCount = (cat: ServiceCategory | "all") => (cat === "all" ? services.length : services.filter((s) => s.category === cat).length)
 
   const handleEdit = (service: Service) => { setEditingService(service); setShowForm(true) }
-  const handleDelete = (service: Service) => { if (confirm(`Delete "${service.name}"?`)) deleteService(service.id) }
-  const handleSubmit = (data: Omit<Service, "id" | "createdAt">) => {
-    if (editingService) { updateService(editingService.id, data) } else { addService(data) }
-    setShowForm(false); setEditingService(null)
+
+  const handleDelete = async (service: Service) => {
+    if (confirm(`Delete "${service.name}"?`)) {
+      await deleteService(service.id)
+      refetch()
+    }
+  }
+
+  const handleSubmit = async (data: Omit<Service, "id" | "createdAt">) => {
+    if (editingService) {
+      await updateService(editingService.id, data)
+    } else {
+      await addService(data)
+    }
+    refetch()
+    setShowForm(false)
+    setEditingService(null)
+  }
+
+  // BREADCRUMB: Handle PDF import - add all services and refetch
+  const handleImport = async (imported: Omit<Service, "id" | "createdAt">[]) => {
+    for (const s of imported) {
+      await addService(s)
+    }
+    refetch()
+    setShowImporter(false)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#2C5F2E]" />
+      </div>
+    )
   }
 
   return (
@@ -58,10 +88,19 @@ export function ServiceGrid() {
       <div className="flex items-center justify-between">
         <span className="text-sm text-[var(--text-muted)]">{filteredServices.length} services</span>
         <div className="flex gap-2">
-          <button onClick={() => setShowImporter(true)} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-amber-900/30 text-amber-400 hover:bg-amber-900/50">
-            <FileUp className="h-4 w-4" />Import from PDF
+          <button
+            onClick={() => setShowImporter(true)}
+            disabled={isAdding}
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-amber-900/30 text-amber-400 hover:bg-amber-900/50 disabled:opacity-50"
+          >
+            {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+            Import from PDF
           </button>
-          <button onClick={() => { setEditingService(null); setShowForm(true) }} className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
+          <button
+            onClick={() => { setEditingService(null); setShowForm(true) }}
+            className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
+            style={{ backgroundColor: "#2C5F2E" }}
+          >
             <Plus className="h-4 w-4" />Add Service
           </button>
         </div>
@@ -82,11 +121,16 @@ export function ServiceGrid() {
         {filteredServices.map((service) => (
           <ServiceCard key={service.id} service={service} onEdit={handleEdit} onDelete={handleDelete} />
         ))}
-        {filteredServices.length === 0 && <p className="col-span-full text-center py-12 text-[var(--text-muted)]">No services in this category</p>}
+        {filteredServices.length === 0 && (
+          <div className="col-span-full text-center py-12">
+            <p className="text-[var(--text-muted)] mb-2">No services yet</p>
+            <p className="text-sm text-[var(--text-muted)]">Import from PDF or add manually</p>
+          </div>
+        )}
       </div>
 
       {showForm && <ServiceForm initialData={editingService} isEditing={!!editingService} onSubmit={handleSubmit} onClose={() => { setShowForm(false); setEditingService(null) }} />}
-      {showImporter && <PdfImporter onClose={() => setShowImporter(false)} onImport={(imported) => { imported.forEach((s) => addService(s)); setShowImporter(false) }} />}
+      {showImporter && <PdfImporter onClose={() => setShowImporter(false)} onImport={handleImport} />}
     </div>
   )
 }
