@@ -3,13 +3,12 @@
  * ZONE: Yellow
  * PURPOSE: API endpoint to call Claude for extracting services from PDF documents
  * EXPORTS: POST
- * DEPENDS ON: @anthropic-ai/sdk
+ * DEPENDS ON: Anthropic API
  * CONSUMED BY: PdfImporter component
  * TESTS: app/api/extract-services/route.test.ts
- * LAST CHANGED: 2026-03-07 — Updated to use Anthropic SDK with PDF document support
+ * LAST CHANGED: 2026-03-07 — Fixed with beta header for PDF support and detailed error logging
  */
 
-import Anthropic from "@anthropic-ai/sdk"
 import { NextRequest, NextResponse } from "next/server"
 
 // BREADCRUMB: System prompt for extracting services from horse stable price lists
@@ -62,6 +61,11 @@ Return ONLY valid JSON, no markdown:
 }`
 
 export async function POST(request: NextRequest) {
+  // Log environment check
+  console.log("API KEY EXISTS:", !!process.env.ANTHROPIC_API_KEY)
+  console.log("API KEY LENGTH:", process.env.ANTHROPIC_API_KEY?.length)
+  console.log("FALLBACK KEY EXISTS:", !!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY)
+
   try {
     const { pdfBase64 } = await request.json()
 
@@ -69,44 +73,68 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No PDF data provided" }, { status: 400 })
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    // Check PDF size (base64 is ~33% larger than binary)
+    const sizeInMB = (pdfBase64.length * 3 / 4) / (1024 * 1024)
+    console.log("PDF size MB:", sizeInMB.toFixed(2))
+
+    if (sizeInMB > 32) {
+      return NextResponse.json({ error: "PDF too large. Max 32MB." }, { status: 400 })
+    }
+
+    // Try both API key sources
+    const apiKey = process.env.ANTHROPIC_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
     if (!apiKey) {
-      console.error("ANTHROPIC_API_KEY not configured")
+      console.error("No ANTHROPIC_API_KEY configured")
       return NextResponse.json({ error: "API key not configured" }, { status: 500 })
     }
 
-    const client = new Anthropic({ apiKey })
-
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4000,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "document",
-              source: {
-                type: "base64",
-                media_type: "application/pdf",
-                data: pdfBase64,
+    // Use direct fetch with beta header for PDF support
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "pdfs-2024-09-25",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "document",
+                source: {
+                  type: "base64",
+                  media_type: "application/pdf",
+                  data: pdfBase64,
+                },
               },
-            },
-            {
-              type: "text",
-              text: "Extract all services from this price list. Return only the JSON object, no other text.",
-            },
-          ],
-        },
-      ],
+              {
+                type: "text",
+                text: "Extract all services from this price list. Return only the JSON object, no other text.",
+              },
+            ],
+          },
+        ],
+      }),
     })
 
-    // Extract text from response
-    const responseText = message.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({ error: "Unknown API error" }))
+      console.error("Anthropic API error status:", response.status)
+      console.error("Anthropic API error:", JSON.stringify(errData, null, 2))
+      return NextResponse.json(
+        { error: errData.error?.message || JSON.stringify(errData), apiStatus: response.status },
+        { status: 500 }
+      )
+    }
+
+    const data = await response.json()
+    const responseText = data.content?.[0]?.text || ""
 
     // Clean response - remove markdown if present
     const cleaned = responseText
@@ -118,12 +146,23 @@ export async function POST(request: NextRequest) {
       const parsed = JSON.parse(cleaned)
       return NextResponse.json(parsed)
     } catch {
-      // Return raw response for debugging if parse fails
+      console.error("Failed to parse Claude response:", cleaned.slice(0, 500))
       return NextResponse.json({ error: "Failed to parse response", rawResponse: cleaned }, { status: 500 })
     }
-  } catch (error) {
-    console.error("Extract services error:", error)
-    const message = error instanceof Error ? error.message : "Failed to extract services"
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch (error: unknown) {
+    const err = error as { constructor?: { name?: string }; message?: string; status?: number }
+    console.error("EXTRACT ERROR TYPE:", err.constructor?.name)
+    console.error("EXTRACT ERROR MESSAGE:", err.message)
+    console.error("EXTRACT ERROR STATUS:", err.status)
+    console.error("EXTRACT ERROR FULL:", JSON.stringify(error, null, 2))
+
+    return NextResponse.json(
+      {
+        error: err.message || "Unknown error",
+        type: err.constructor?.name,
+        status: err.status,
+      },
+      { status: 500 }
+    )
   }
 }
