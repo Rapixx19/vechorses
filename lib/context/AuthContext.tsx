@@ -213,38 +213,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) throw new Error("Supabase client not available")
       setIsLoading(true)
 
-      // Step 1: Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName } },
-      })
+      try {
+        // Step 1: Create auth user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName } },
+        })
 
-      if (authError || !authData.user) {
-        setIsLoading(false)
-        throw new Error(authError?.message || "Registration failed")
-      }
+        if (signUpError) {
+          throw signUpError
+        }
+        if (!authData.user) {
+          throw new Error("No user returned from signup")
+        }
 
-      // Step 2: Create stable and profile via API route (handles RLS)
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: authData.user.id,
+        // Step 2: Create stable and profile via API route (handles RLS)
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: authData.user.id,
+            fullName,
+            stableName,
+            email,
+          }),
+        })
+
+        const result = await res.json()
+
+        if (!res.ok) {
+          throw new Error(result.error || "Failed to create stable")
+        }
+
+        // Step 3: Set current user immediately
+        setCurrentUser({
+          id: authData.user.id,
           fullName,
-          stableName,
-        }),
-      })
+          email,
+          role: "owner",
+          permissions: getDefaultPermissions("owner"),
+          stableId: result.stableId || "",
+          stableName: stableName,
+        })
 
-      const result = await res.json()
-
-      if (!res.ok) {
+        router.push("/dashboard")
+      } catch (error) {
+        console.error("Registration error:", error)
+        throw error
+      } finally {
         setIsLoading(false)
-        throw new Error(result.error || "Failed to create stable")
       }
-
-      setIsLoading(false)
-      router.push("/dashboard")
     },
     [supabase, router]
   )
