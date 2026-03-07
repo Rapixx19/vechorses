@@ -48,15 +48,8 @@ export default function BillingPage() {
   const [preselectedClientId, setPreselectedClientId] = useState<string | null>(null)
   const [invoiceClient, setInvoiceClient] = useState<{ client: Client; items: BillingLineItem[] } | null>(null)
 
-  if (clientsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
-      </div>
-    )
-  }
-
-  // BREADCRUMB: Group items by client for client-centric view
+  // BREADCRUMB: All hooks must be called before any conditional returns (React rules of hooks)
+  // Group items by client for client-centric view
   const clientsWithItems = useMemo(() => {
     const grouped = new Map<string, BillingLineItem[]>()
     localItems.forEach((item) => {
@@ -75,7 +68,7 @@ export default function BillingPage() {
       })
   }, [localItems, clients])
 
-  // BREADCRUMB: Filter items for table view
+  // Filter items for table view
   const filteredItems = useMemo(() => {
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -95,6 +88,14 @@ export default function BillingPage() {
       return searchMatch && statusMatch && serviceMatch && dateMatch
     })
   }, [localItems, clients, filters])
+
+  if (clientsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
 
   const handleStatusChange = (itemId: string, newStatus: BillingStatus) => {
     setLocalItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, status: newStatus } : i)))
