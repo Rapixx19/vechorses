@@ -80,8 +80,23 @@ export function ClientList() {
         ))}
       </div>
 
-      {filteredClients.length === 0 && (
-        <p className="text-center text-[var(--text-muted)] py-8">No clients found</p>
+      {filteredClients.length === 0 && activeClients.length === 0 && (
+        <div className="text-center py-12 rounded-lg" style={{ backgroundColor: "#1A1A2E" }}>
+          <p className="text-[var(--text-primary)] font-medium mb-2">No clients yet</p>
+          <p className="text-sm text-[var(--text-muted)] mb-4">Add your first client to start managing horse owners</p>
+          <Link
+            href="/clients/new"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white"
+            style={{ backgroundColor: "#2C5F2E" }}
+          >
+            <Plus className="h-4 w-4" />
+            Add your first client
+          </Link>
+        </div>
+      )}
+
+      {filteredClients.length === 0 && activeClients.length > 0 && (
+        <p className="text-center text-[var(--text-muted)] py-8">No clients match your search</p>
       )}
     </div>
   )

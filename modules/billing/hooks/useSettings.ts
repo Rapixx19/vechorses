@@ -1,48 +1,169 @@
 /**
  * FILE: modules/billing/hooks/useSettings.ts
  * ZONE: 🔴 Red
- * PURPOSE: Hook for stable settings state management
+ * PURPOSE: Hook for stable settings state management from Supabase
  * EXPORTS: useSettings, useUpdateSettings
- * DEPENDS ON: lib/mock/settings, lib/types
+ * DEPENDS ON: lib/supabase.ts, lib/types.ts, lib/hooks/useAuth.ts
  * CONSUMED BY: InvoiceBuilder, app/settings/page.tsx
  * TESTS: modules/billing/tests/useSettings.test.ts
- * LAST CHANGED: 2026-03-06 — Initial creation for Phase 7b
+ * LAST CHANGED: 2026-03-07 — V2: Wired to Supabase stables table
  */
 
 // 🔴 RED ZONE — billing settings, handle with care
 
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
-import { mockStableSettings } from "@/lib/mock"
+import { useState, useCallback, useEffect, useMemo } from "react"
+import { createClient } from "@/lib/supabase"
+import { useAuth } from "@/lib/hooks/useAuth"
 import type { StableSettings } from "@/lib/types"
 
-// Shared state across hook instances (V1 mock approach)
-let globalSettings: StableSettings = { ...mockStableSettings }
-const listeners: Set<() => void> = new Set()
+// Default empty settings (used when no stable exists yet)
+const defaultSettings: StableSettings = {
+  stableName: "",
+  ownerName: "",
+  address: "",
+  city: "",
+  country: "",
+  phone: "",
+  email: "",
+  vatNumber: "",
+  logoUrl: undefined,
+  bankName: "",
+  bankIban: "",
+  bankBic: "",
+  invoicePrefix: "INV",
+  invoiceStartNumber: 1001,
+  billingDayOfMonth: 1,
+  currency: "EUR",
+  invoiceNotes: "",
+  invoiceFooter: "",
+}
 
-function notifyListeners() {
-  listeners.forEach((listener) => listener())
+// DB row type from Supabase stables table
+interface StableRow {
+  id: string
+  stable_name: string
+  owner_user_id: string | null
+  referral_code: string
+  country: string | null
+  phone: string | null
+  email: string | null
+  address: string | null
+  city: string | null
+  vat_number: string | null
+  logo_url: string | null
+  bank_name: string | null
+  bank_iban: string | null
+  bank_bic: string | null
+  invoice_prefix: string | null
+  invoice_start_number: number | null
+  billing_day_of_month: number | null
+  currency: string | null
+  invoice_notes: string | null
+  invoice_footer: string | null
+  created_at: string | null
 }
 
 export function useSettings(): StableSettings {
-  const [, forceUpdate] = useState({})
+  const { currentUser } = useAuth()
+  const [settings, setSettings] = useState<StableSettings>(defaultSettings)
+  const supabase = useMemo(() => createClient(), [])
 
-  // Subscribe to updates
   useEffect(() => {
-    const listener = () => forceUpdate({})
-    listeners.add(listener)
-    return () => {
-      listeners.delete(listener)
+    if (!currentUser?.stableId) {
+      // Use defaults with user's name if available
+      setSettings({
+        ...defaultSettings,
+        ownerName: currentUser?.fullName || "",
+        email: currentUser?.email || "",
+        stableName: currentUser?.stableName || "",
+      })
+      return
     }
-  }, [])
 
-  return globalSettings
+    async function fetchSettings() {
+      const { data, error } = await supabase
+        .from("stables")
+        .select("*")
+        .eq("id", currentUser!.stableId)
+        .single()
+
+      if (error || !data) {
+        console.error("Failed to fetch stable settings:", error)
+        return
+      }
+
+      const row = data as StableRow
+      setSettings({
+        stableName: row.stable_name || "",
+        ownerName: currentUser?.fullName || "",
+        address: row.address || "",
+        city: row.city || "",
+        country: row.country || "",
+        phone: row.phone || "",
+        email: row.email || "",
+        vatNumber: row.vat_number || undefined,
+        logoUrl: row.logo_url || undefined,
+        bankName: row.bank_name || undefined,
+        bankIban: row.bank_iban || undefined,
+        bankBic: row.bank_bic || undefined,
+        invoicePrefix: row.invoice_prefix || "INV",
+        invoiceStartNumber: row.invoice_start_number || 1001,
+        billingDayOfMonth: row.billing_day_of_month || 1,
+        currency: row.currency || "EUR",
+        invoiceNotes: row.invoice_notes || undefined,
+        invoiceFooter: row.invoice_footer || undefined,
+      })
+    }
+
+    fetchSettings()
+  }, [currentUser?.stableId, currentUser?.fullName, currentUser?.email, currentUser?.stableName, supabase])
+
+  return settings
 }
 
-export function useUpdateSettings(): (updates: Partial<StableSettings>) => void {
-  return useCallback((updates: Partial<StableSettings>) => {
-    globalSettings = { ...globalSettings, ...updates }
-    notifyListeners()
-  }, [])
+export function useUpdateSettings(): (updates: Partial<StableSettings>) => Promise<void> {
+  const { currentUser } = useAuth()
+  const supabase = useMemo(() => createClient(), [])
+
+  return useCallback(
+    async (updates: Partial<StableSettings>) => {
+      if (!currentUser?.stableId) {
+        console.warn("Cannot update settings: no stableId")
+        return
+      }
+
+      // Map camelCase to snake_case for DB
+      const dbUpdates: Record<string, unknown> = {}
+      if (updates.stableName !== undefined) dbUpdates.stable_name = updates.stableName
+      if (updates.address !== undefined) dbUpdates.address = updates.address
+      if (updates.city !== undefined) dbUpdates.city = updates.city
+      if (updates.country !== undefined) dbUpdates.country = updates.country
+      if (updates.phone !== undefined) dbUpdates.phone = updates.phone
+      if (updates.email !== undefined) dbUpdates.email = updates.email
+      if (updates.vatNumber !== undefined) dbUpdates.vat_number = updates.vatNumber
+      if (updates.logoUrl !== undefined) dbUpdates.logo_url = updates.logoUrl
+      if (updates.bankName !== undefined) dbUpdates.bank_name = updates.bankName
+      if (updates.bankIban !== undefined) dbUpdates.bank_iban = updates.bankIban
+      if (updates.bankBic !== undefined) dbUpdates.bank_bic = updates.bankBic
+      if (updates.invoicePrefix !== undefined) dbUpdates.invoice_prefix = updates.invoicePrefix
+      if (updates.invoiceStartNumber !== undefined) dbUpdates.invoice_start_number = updates.invoiceStartNumber
+      if (updates.billingDayOfMonth !== undefined) dbUpdates.billing_day_of_month = updates.billingDayOfMonth
+      if (updates.currency !== undefined) dbUpdates.currency = updates.currency
+      if (updates.invoiceNotes !== undefined) dbUpdates.invoice_notes = updates.invoiceNotes
+      if (updates.invoiceFooter !== undefined) dbUpdates.invoice_footer = updates.invoiceFooter
+
+      const { error } = await supabase
+        .from("stables")
+        .update(dbUpdates)
+        .eq("id", currentUser.stableId)
+
+      if (error) {
+        console.error("Failed to update settings:", error)
+        throw new Error(error.message)
+      }
+    },
+    [currentUser?.stableId, supabase]
+  )
 }
