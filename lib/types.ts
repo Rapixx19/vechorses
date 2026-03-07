@@ -166,6 +166,13 @@ export interface StableSettings {
   currency: string
   invoiceNotes?: string
   invoiceFooter?: string
+  // Auto invoice settings
+  autoInvoiceEnabled?: boolean
+  autoInvoiceDay?: number
+  autoInvoiceServices?: string[]
+  autoInvoiceClients?: "all" | "selected"
+  autoInvoiceSelectedClientIds?: string[]
+  autoInvoiceEmailEnabled?: boolean
 }
 
 export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled"

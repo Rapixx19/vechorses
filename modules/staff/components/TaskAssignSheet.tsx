@@ -1,20 +1,29 @@
 /**
  * FILE: modules/staff/components/TaskAssignSheet.tsx
  * ZONE: Green
- * PURPOSE: Sheet to assign a task to a staff member
+ * PURPOSE: Sheet to assign a task to a staff member with quick templates
  * EXPORTS: TaskAssignSheet
  * DEPENDS ON: lib/types.ts, lucide-react, useStaffActions
- * CONSUMED BY: StaffPage, StaffDetail
+ * CONSUMED BY: StaffPage, StaffDetail, CalendarPage
  * TESTS: modules/staff/tests/TaskAssignSheet.test.tsx
- * LAST CHANGED: 2026-03-07 — Initial creation for staff management
+ * LAST CHANGED: 2026-03-07 — Added quick task templates and pre-selection
  */
 
 "use client"
 
-import { useState } from "react"
-import { X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { X, Zap } from "lucide-react"
 import type { TaskPriority, TaskCategory, Horse } from "@/lib/types"
 import { useStaffActions, type AssignTaskInput } from "../hooks/useStaff"
+
+// BREADCRUMB: Quick task templates for common stable operations
+const QUICK_TEMPLATES = [
+  { title: "Morning feeding", category: "feeding" as TaskCategory, priority: "high" as TaskPriority },
+  { title: "Evening feeding", category: "feeding" as TaskCategory, priority: "high" as TaskPriority },
+  { title: "Stall cleaning", category: "cleaning" as TaskCategory, priority: "medium" as TaskPriority },
+  { title: "Grooming", category: "grooming" as TaskCategory, priority: "low" as TaskPriority },
+  { title: "Exercise", category: "training" as TaskCategory, priority: "medium" as TaskPriority },
+]
 
 interface TaskAssignSheetProps {
   memberId: string
@@ -22,6 +31,9 @@ interface TaskAssignSheetProps {
   horses: Horse[]
   onClose: () => void
   onSuccess: () => void
+  // New props for pre-selection
+  initialDate?: Date
+  createCalendarEvent?: boolean
 }
 
 const PRIORITIES: { value: TaskPriority; label: string }[] = [
@@ -42,7 +54,15 @@ const CATEGORIES: { value: TaskCategory; label: string }[] = [
   { value: "other", label: "Other" },
 ]
 
-export function TaskAssignSheet({ memberId, memberName, horses, onClose, onSuccess }: TaskAssignSheetProps) {
+export function TaskAssignSheet({
+  memberId,
+  memberName,
+  horses,
+  onClose,
+  onSuccess,
+  initialDate,
+  createCalendarEvent = false,
+}: TaskAssignSheetProps) {
   const { assignTask } = useStaffActions()
 
   const [title, setTitle] = useState("")
@@ -54,6 +74,19 @@ export function TaskAssignSheet({ memberId, memberName, horses, onClose, onSucce
   const [horseId, setHorseId] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // BREADCRUMB: Pre-fill date if provided
+  useEffect(() => {
+    if (initialDate) {
+      setDueDate(initialDate.toISOString().split("T")[0])
+    }
+  }, [initialDate])
+
+  const applyTemplate = (template: typeof QUICK_TEMPLATES[0]) => {
+    setTitle(template.title)
+    setCategory(template.category)
+    setPriority(template.priority)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -110,6 +143,26 @@ export function TaskAssignSheet({ memberId, memberName, horses, onClose, onSucce
               {error}
             </div>
           )}
+
+          {/* Quick Templates */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="h-3 w-3 text-yellow-500" />
+              <label className="text-xs text-gray-400">Quick Templates</label>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_TEMPLATES.map((template) => (
+                <button
+                  key={template.title}
+                  type="button"
+                  onClick={() => applyTemplate(template)}
+                  className="px-2 py-1 rounded text-xs bg-[#1A1A2E] text-gray-300 hover:bg-[#2C5F2E] hover:text-white transition-colors"
+                >
+                  {template.title}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Title */}
           <div>

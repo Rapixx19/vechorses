@@ -63,6 +63,12 @@ interface StableRow {
   invoice_notes: string | null
   invoice_footer: string | null
   created_at: string | null
+  // Auto invoice fields
+  auto_invoice_enabled: boolean | null
+  auto_invoice_day: number | null
+  auto_invoice_services: string[] | null
+  auto_invoice_clients: string | null
+  auto_invoice_email_enabled: boolean | null
 }
 
 export function useSettings(): StableSettings {
@@ -114,6 +120,12 @@ export function useSettings(): StableSettings {
         currency: row.currency || "EUR",
         invoiceNotes: row.invoice_notes || undefined,
         invoiceFooter: row.invoice_footer || undefined,
+        // Auto invoice settings
+        autoInvoiceEnabled: row.auto_invoice_enabled || false,
+        autoInvoiceDay: row.auto_invoice_day || 1,
+        autoInvoiceServices: row.auto_invoice_services || [],
+        autoInvoiceClients: (row.auto_invoice_clients as "all" | "selected") || "all",
+        autoInvoiceEmailEnabled: row.auto_invoice_email_enabled || false,
       })
     }
 
@@ -153,6 +165,12 @@ export function useUpdateSettings(): (updates: Partial<StableSettings>) => Promi
       if (updates.currency !== undefined) dbUpdates.currency = updates.currency
       if (updates.invoiceNotes !== undefined) dbUpdates.invoice_notes = updates.invoiceNotes
       if (updates.invoiceFooter !== undefined) dbUpdates.invoice_footer = updates.invoiceFooter
+      // Auto invoice fields
+      if (updates.autoInvoiceEnabled !== undefined) dbUpdates.auto_invoice_enabled = updates.autoInvoiceEnabled
+      if (updates.autoInvoiceDay !== undefined) dbUpdates.auto_invoice_day = updates.autoInvoiceDay
+      if (updates.autoInvoiceServices !== undefined) dbUpdates.auto_invoice_services = updates.autoInvoiceServices
+      if (updates.autoInvoiceClients !== undefined) dbUpdates.auto_invoice_clients = updates.autoInvoiceClients
+      if (updates.autoInvoiceEmailEnabled !== undefined) dbUpdates.auto_invoice_email_enabled = updates.autoInvoiceEmailEnabled
 
       const { error } = await supabase
         .from("stables")
