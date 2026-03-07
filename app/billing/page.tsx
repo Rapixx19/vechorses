@@ -28,7 +28,7 @@ import {
 } from "@/modules/billing"
 import type { BillingFilterState } from "@/modules/billing"
 import { useClients } from "@/modules/clients"
-import type { BillingLineItem, BillingStatus, Client, Invoice } from "@/lib/types"
+import type { BillingLineItem, BillingStatus, Client } from "@/lib/types"
 
 type ViewTab = "by_client" | "all_transactions"
 
@@ -237,7 +237,7 @@ export default function BillingPage() {
           lineItems={invoiceClient.items}
           settings={settings}
           onClose={() => setInvoiceClient(null)}
-          onSave={(_invoice: Invoice) => {
+          onSave={() => {
             // Invoice is created by InvoiceBuilder via useCreateInvoice hook
             // Mark included line items as invoiced in local state
             setLocalItems((prev) => prev.map((i) => (invoiceClient.items.some((ii) => ii.id === i.id) ? { ...i, status: "invoiced" as const } : i)))
