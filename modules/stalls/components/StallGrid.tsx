@@ -1,129 +1,163 @@
 /**
  * FILE: modules/stalls/components/StallGrid.tsx
  * ZONE: Green
- * PURPOSE: Visual stall grid with builder mode for arranging stalls
+ * PURPOSE: Main stalls page with floor plan builder and mobile list view
  * EXPORTS: StallGrid
- * DEPENDS ON: useStalls, useHorses, useClients, StallCard, StableStatsBar, StableBuilder
+ * DEPENDS ON: useStalls, useHorses, useClients, useStableLayout, FloorPlanCanvas, etc.
  * CONSUMED BY: app/stalls/page.tsx
  * TESTS: modules/stalls/tests/StallGrid.test.tsx
- * LAST CHANGED: 2026-03-07 — Complete rewrite for visual stable builder
+ * LAST CHANGED: 2026-03-07 — Complete rewrite for modular floor plan builder
  */
 
 "use client"
 
-import { useState, useEffect } from "react"
-import { Settings, Loader2 } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Settings, Grid, List, Loader2 } from "lucide-react"
 import { useStalls, useAddStall, useUpdateStall, useDeleteStall } from "@/modules/stalls"
 import { useHorses } from "@/modules/horses"
 import { useClients } from "@/modules/clients"
-import { StallCard } from "./StallCard"
+import { useStableLayout } from "../hooks/useStableLayout"
+import { FloorPlanCanvas } from "./FloorPlanCanvas"
+import { FloorPlanView } from "./FloorPlanView"
+import { MobileStallList } from "./MobileStallList"
 import { StableStatsBar } from "./StableStatsBar"
-import { StableBuilder } from "./StableBuilder"
 import { StallSheet } from "./StallSheet"
 import { AssignHorseSheet } from "./AssignHorseSheet"
-import type { Stall } from "@/lib/types"
+import type { Stall, StableLayout } from "@/lib/types"
 
 type SheetState = { type: "detail"; stall: Stall } | { type: "assign"; stall: Stall } | null
+type ViewMode = "grid" | "list"
+
+// BREADCRUMB: Mobile breakpoint detection
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
+  return isMobile
+}
 
 export function StallGrid() {
   const { stalls, isLoading: stallsLoading, refetch } = useStalls()
   const { horses, isLoading: horsesLoading } = useHorses()
   const { clients, isLoading: clientsLoading } = useClients()
+  const { layout: savedLayout, isLoading: layoutLoading, saveLayout, generateDefaultLayout } = useStableLayout()
   const { addStall } = useAddStall()
   const { updateStall, updateStallPositions } = useUpdateStall()
-  const { deleteStall } = useDeleteStall()
+  useDeleteStall() // Available for future use
 
-  const [localStalls, setLocalStalls] = useState<Stall[]>([])
   const [isEditMode, setIsEditMode] = useState(false)
-  const [gridCols, setGridCols] = useState(4)
+  const [localLayout, setLocalLayout] = useState<StableLayout | null>(null)
   const [sheetState, setSheetState] = useState<SheetState>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  const [isSaving, setIsSaving] = useState(false)
 
-  const isLoading = stallsLoading || horsesLoading || clientsLoading
+  const isMobile = useIsMobile()
+  const isLoading = stallsLoading || horsesLoading || clientsLoading || layoutLoading
 
-  // Sync local stalls with fetched stalls
+  // BREADCRUMB: Initialize layout from saved or generate default
   useEffect(() => {
-    setLocalStalls(stalls)
-    if (stalls.length > 0) {
-      setGridCols(stalls[0].gridCols || 4)
+    if (!isLoading && stalls.length >= 0) {
+      if (savedLayout) {
+        setLocalLayout(savedLayout)
+      } else if (stalls.length > 0) {
+        // Auto-generate layout from existing stalls
+        setLocalLayout(generateDefaultLayout(stalls))
+      } else {
+        // Empty default layout
+        setLocalLayout({ rows: 8, cols: 10, cells: [] })
+      }
     }
-  }, [stalls])
+  }, [isLoading, savedLayout, stalls, generateDefaultLayout])
 
   const getHorse = (horseId: string | null) => horses.find((h) => h.id === horseId) || null
   const getClient = (ownerId: string) => clients.find((c) => c.id === ownerId) || null
-  const unassignedHorses = horses.filter((h) => !localStalls.some((s) => s.horseId === h.id))
+  const unassignedHorses = horses.filter((h) => !stalls.some((s) => s.horseId === h.id))
 
-  // BREADCRUMB: Handle stall card click - show detail or assign sheet
-  const handleStallClick = (stall: Stall) => {
-    if (isEditMode) return
+  // BREADCRUMB: Handle stall click in view mode
+  const handleStallClick = useCallback((stallId: string) => {
+    const stall = stalls.find((s) => s.id === stallId)
+    if (!stall) return
     setSheetState(stall.horseId ? { type: "detail", stall } : { type: "assign", stall })
-  }
+  }, [stalls])
 
-  // BREADCRUMB: Handle adding new stall in builder mode
-  const handleAddStall = async (position: number, rowIndex: number, colIndex: number) => {
-    const label = `Box ${localStalls.length + 1}`
-    const result = await addStall({ label, position, rowIndex, colIndex })
-    if (result.success) {
+  // BREADCRUMB: Handle stall click from mobile list
+  const handleMobileStallClick = useCallback((stall: Stall) => {
+    setSheetState(stall.horseId ? { type: "detail", stall } : { type: "assign", stall })
+  }, [])
+
+  // BREADCRUMB: Save layout and sync stall positions
+  const handleSaveLayout = async () => {
+    if (!localLayout) return
+
+    setIsSaving(true)
+
+    // Save layout JSON to stables table
+    const layoutSaved = await saveLayout(localLayout)
+
+    if (layoutSaved) {
+      // Sync stall positions to stalls table
+      const stallCells = localLayout.cells.filter((c) => c.type === "stall" && c.stallId)
+      const positionUpdates = stallCells.map((cell) => ({
+        id: cell.stallId!,
+        position: cell.row * localLayout.cols + cell.col,
+        rowIndex: cell.row,
+        colIndex: cell.col,
+      }))
+
+      if (positionUpdates.length > 0) {
+        await updateStallPositions(positionUpdates)
+      }
+
+      // Create new stalls for cells without stallId
+      const newStallCells = localLayout.cells.filter((c) => c.type === "stall" && !c.stallId)
+      for (const cell of newStallCells) {
+        const result = await addStall({
+          label: cell.label || `Box ${stalls.length + 1}`,
+          type: cell.stallType || "standard",
+          position: cell.row * localLayout.cols + cell.col,
+          rowIndex: cell.row,
+          colIndex: cell.col,
+        })
+        if (result.success && result.id) {
+          // Update cell with new stallId
+          cell.stallId = result.id
+        }
+      }
+
+      // Save layout again with stallIds
+      await saveLayout(localLayout)
       refetch()
     }
-  }
 
-  // BREADCRUMB: Handle updating stall in builder mode
-  const handleUpdateStall = (id: string, updates: Partial<Stall>) => {
-    setLocalStalls((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)))
-  }
-
-  // BREADCRUMB: Handle deleting stall in builder mode
-  const handleDeleteStall = async (id: string) => {
-    if (!confirm("Delete this stall?")) return
-    setLocalStalls((prev) => prev.filter((s) => s.id !== id))
-    await deleteStall(id)
-  }
-
-  // BREADCRUMB: Save all layout changes
-  const handleSaveLayout = async () => {
-    // Update grid cols for all stalls
-    const updates = localStalls.map((stall) => ({
-      id: stall.id,
-      position: stall.position,
-      rowIndex: stall.rowIndex,
-      colIndex: stall.colIndex,
-    }))
-
-    await updateStallPositions(updates)
-
-    // Update grid cols individually
-    for (const stall of localStalls) {
-      await updateStall(stall.id, { gridCols, type: stall.type, isMaintenance: stall.isMaintenance, label: stall.label })
-    }
-
+    setIsSaving(false)
     setIsEditMode(false)
-    refetch()
   }
 
-  // BREADCRUMB: Cancel edit mode and revert changes
+  // BREADCRUMB: Cancel edit mode
   const handleCancelEdit = () => {
-    setLocalStalls(stalls)
+    setLocalLayout(savedLayout || generateDefaultLayout(stalls))
     setIsEditMode(false)
   }
 
-  // BREADCRUMB: Handle assigning horse to stall
-  const handleAssign = async (horseId: string) => {
+  // BREADCRUMB: Handle assign horse
+  const handleAssign = async (_horseId: string) => {
     if (sheetState?.type === "assign") {
+      await updateStall(sheetState.stall.id, {})
       // TODO: Update horse's stallId in horses table
-      setLocalStalls((prev) =>
-        prev.map((s) => (s.id === sheetState.stall.id ? { ...s, horseId } : s))
-      )
+      refetch()
       setSheetState(null)
     }
   }
 
-  // BREADCRUMB: Handle unassigning horse from stall
+  // BREADCRUMB: Handle unassign horse
   const handleUnassign = () => {
     if (sheetState?.type === "detail") {
       // TODO: Update horse's stallId to null in horses table
-      setLocalStalls((prev) =>
-        prev.map((s) => (s.id === sheetState.stall.id ? { ...s, horseId: null } : s))
-      )
+      refetch()
       setSheetState(null)
     }
   }
@@ -132,6 +166,52 @@ export function StallGrid() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-[#2C5F2E]" />
+      </div>
+    )
+  }
+
+  // Mobile view
+  if (isMobile && !isEditMode) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Stalls</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538]"
+            >
+              {viewMode === "grid" ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <StableStatsBar stalls={stalls} />
+
+        <MobileStallList stalls={stalls} horses={horses} onStallClick={handleMobileStallClick} />
+
+        {/* Sheets */}
+        {sheetState?.type === "detail" && getHorse(sheetState.stall.horseId) && (
+          <StallSheet
+            stall={sheetState.stall}
+            horse={getHorse(sheetState.stall.horseId)!}
+            owner={getClient(getHorse(sheetState.stall.horseId)!.ownerId)}
+            tasks={[]}
+            onClose={() => setSheetState(null)}
+            onUnassign={handleUnassign}
+            onCompleteTask={() => {}}
+          />
+        )}
+
+        {sheetState?.type === "assign" && (
+          <AssignHorseSheet
+            stall={sheetState.stall}
+            unassignedHorses={unassignedHorses}
+            clients={clients}
+            onAssign={handleAssign}
+            onClose={() => setSheetState(null)}
+          />
+        )}
       </div>
     )
   }
@@ -153,53 +233,30 @@ export function StallGrid() {
       </div>
 
       {/* Stats Bar */}
-      <StableStatsBar stalls={localStalls} />
+      <StableStatsBar stalls={stalls} />
 
-      {/* Edit Mode: Builder */}
-      {isEditMode ? (
-        <StableBuilder
-          stalls={localStalls}
-          gridCols={gridCols}
-          onGridColsChange={setGridCols}
-          onAddStall={handleAddStall}
-          onUpdateStall={handleUpdateStall}
-          onDeleteStall={handleDeleteStall}
+      {/* Edit Mode: Floor Plan Canvas */}
+      {isEditMode && localLayout ? (
+        <FloorPlanCanvas
+          layout={localLayout}
+          stalls={stalls}
+          horses={horses}
+          onLayoutChange={setLocalLayout}
           onSave={handleSaveLayout}
           onCancel={handleCancelEdit}
+          onStallClick={handleStallClick}
+          isSaving={isSaving}
         />
       ) : (
-        /* Normal Mode: Visual Grid */
-        <>
-          {localStalls.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-[var(--text-muted)] mb-2">No stalls yet</p>
-              <button
-                onClick={() => setIsEditMode(true)}
-                className="text-sm text-[#2C5F2E] hover:underline"
-              >
-                Click "Edit Layout" to add stalls
-              </button>
-            </div>
-          ) : (
-            <div
-              className="grid gap-4"
-              style={{
-                gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
-              }}
-            >
-              {localStalls
-                .sort((a, b) => a.position - b.position)
-                .map((stall) => (
-                  <StallCard
-                    key={stall.id}
-                    stall={stall}
-                    horse={getHorse(stall.horseId)}
-                    onClick={() => handleStallClick(stall)}
-                  />
-                ))}
-            </div>
-          )}
-        </>
+        /* View Mode: Floor Plan View */
+        localLayout && (
+          <FloorPlanView
+            layout={localLayout}
+            stalls={stalls}
+            horses={horses}
+            onStallClick={handleStallClick}
+          />
+        )
       )}
 
       {/* Detail Sheet */}

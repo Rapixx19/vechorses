@@ -83,6 +83,26 @@ export interface Stall {
   isMaintenance: boolean
 }
 
+// Floor Plan Layout Types
+export type CellType = "empty" | "stall" | "wall" | "aisle" | "door"
+
+export interface LayoutCell {
+  row: number
+  col: number
+  type: CellType
+  stallId?: string
+  stallType?: StallType
+  label?: string
+  width: number
+  height: number
+}
+
+export interface StableLayout {
+  rows: number
+  cols: number
+  cells: LayoutCell[]
+}
+
 export type TaskType = "feeding" | "medication" | "farrier" | "vet" | "other"
 
 export interface Task {
