@@ -17,21 +17,30 @@ import { useAuth } from "@/lib/hooks/useAuth"
 import { Loader2 } from "lucide-react"
 
 export default function LoginPage() {
-  const { login, isLoading } = useAuth()
+  const { login, isLoading: authLoading } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Combined loading state
+  const isLoading = authLoading || isSubmitting
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setIsSubmitting(true)
+
     try {
       await login(email, password)
+      // If login succeeds, the AuthContext will redirect to /dashboard
     } catch (err) {
       // Show actual error message for debugging
-      const message = err instanceof Error ? err.message : "Login failed"
+      const message = err instanceof Error ? err.message : "Invalid email or password"
       console.error("Login error:", message)
       setError(message)
+      // Don't reset form fields on error - let user try again
+      setIsSubmitting(false)
     }
   }
 

@@ -192,11 +192,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       if (!supabase) throw new Error("Supabase client not available")
-      setIsLoading(true)
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      setIsLoading(false)
-      if (error) throw new Error(error.message)
-      router.push("/dashboard")
+
+      try {
+        setIsLoading(true)
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+
+        if (error) {
+          console.error("Login error:", error)
+          throw new Error(error.message)
+        }
+
+        // Wait for profile to be fetched before completing login
+        if (data.user) {
+          const profile = await fetchUserProfile(supabase, data.user.id, data.user.email)
+          setCurrentUser(profile)
+        }
+
+        // Only redirect after user is set
+        router.push("/dashboard")
+      } catch (error) {
+        console.error("Login catch:", error)
+        throw error
+      } finally {
+        setIsLoading(false)
+      }
     },
     [supabase, router]
   )

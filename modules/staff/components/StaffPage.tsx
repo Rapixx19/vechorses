@@ -11,7 +11,7 @@
 
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   UserPlus,
@@ -103,21 +103,33 @@ function StaffPageSkeleton() {
   )
 }
 
-// BREADCRUMB: Count-up animation hook
+// BREADCRUMB: Count-up animation hook (SSR-safe)
 function useCountUp(end: number, duration: number = 800): number {
   const [count, setCount] = useState(0)
 
-  useState(() => {
+  useEffect(() => {
+    // Only run animation on client side
+    if (typeof window === "undefined") return
+
     const startTime = Date.now()
+    let animationFrame: number
+
     const animate = () => {
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / duration, 1)
       const eased = 1 - (1 - progress) * (1 - progress)
       setCount(Math.floor(end * eased))
-      if (progress < 1) requestAnimationFrame(animate)
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate)
+      }
     }
-    requestAnimationFrame(animate)
-  })
+
+    animationFrame = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame)
+    }
+  }, [end, duration])
 
   return count
 }

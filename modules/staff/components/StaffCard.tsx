@@ -93,10 +93,12 @@ export function StaffCard({
     setShowMenu(false)
   }
 
-  // Calculate mock stats (in real app, these would come from the member data)
+  // Calculate stats (use deterministic values based on member data to avoid hydration mismatch)
   const pendingTasks = member.pendingTasksCount || 0
-  const completedTasks = Math.floor(Math.random() * 5) // Mock
-  const horsesAssigned = Math.floor(Math.random() * 6) + 1 // Mock
+  // Generate stable "random" values based on member id hash to avoid SSR/client mismatch
+  const idHash = member.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const completedTasks = (idHash % 5) + 1
+  const horsesAssigned = ((idHash * 7) % 6) + 1
 
   return (
     <motion.div
