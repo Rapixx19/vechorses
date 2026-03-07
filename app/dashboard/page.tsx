@@ -6,7 +6,7 @@
  * DEPENDS ON: modules/dashboard, modules/horses, modules/clients, modules/stalls, modules/billing
  * CONSUMED BY: Next.js routing
  * TESTS: app/dashboard/page.test.tsx
- * LAST CHANGED: 2026-03-06 — Polished layout with more spacing and cleaner styling
+ * LAST CHANGED: 2026-03-07 — Updated useBilling hook for Supabase integration
  */
 
 "use client"
@@ -29,9 +29,9 @@ export default function DashboardPage() {
   const { clients, isLoading: clientsLoading } = useClients()
   const { stalls, isLoading: stallsLoading } = useStalls()
   const { tasks, isLoading: tasksLoading } = useTasks()
-  const billingItems = useBilling()
+  const { items: billingItems, isLoading: billingLoading } = useBilling()
 
-  const isLoading = horsesLoading || clientsLoading || stallsLoading || tasksLoading
+  const isLoading = horsesLoading || clientsLoading || stallsLoading || tasksLoading || billingLoading
 
   const today = new Date()
   const todayStr = today.toISOString().split("T")[0]

@@ -6,7 +6,7 @@
  * DEPENDS ON: useClients, useHorses, useBilling, ClientCard
  * CONSUMED BY: app/clients/page.tsx
  * TESTS: modules/clients/tests/ClientList.test.tsx
- * LAST CHANGED: 2026-03-06 — Added billing data for revenue badge
+ * LAST CHANGED: 2026-03-07 — V2: Updated useBilling hook for Supabase integration
  */
 
 "use client"
@@ -23,9 +23,9 @@ export function ClientList() {
   const [search, setSearch] = useState("")
   const { clients, isLoading: clientsLoading } = useClients()
   const { horses, isLoading: horsesLoading } = useHorses()
-  const billingItems = useBilling()
+  const { items: billingItems, isLoading: billingLoading } = useBilling()
 
-  const isLoading = clientsLoading || horsesLoading
+  const isLoading = clientsLoading || horsesLoading || billingLoading
 
   // BREADCRUMB: Count horses per client for display
   const getHorseCount = (clientId: string) =>

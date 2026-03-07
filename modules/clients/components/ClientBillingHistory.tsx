@@ -6,7 +6,7 @@
  * DEPENDS ON: useBilling, lib/types.ts
  * CONSUMED BY: ClientDetail
  * TESTS: modules/clients/tests/ClientBillingHistory.test.tsx
- * LAST CHANGED: 2026-03-06 — Initial creation
+ * LAST CHANGED: 2026-03-07 — V2: Updated useBilling hook for Supabase integration
  */
 
 "use client"
@@ -41,7 +41,16 @@ const rowColors: Record<BillingStatus, string> = {
 }
 
 export function ClientBillingHistory({ clientId }: ClientBillingHistoryProps) {
-  const allBilling = useBilling()
+  const { items: allBilling, isLoading } = useBilling()
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#2C5F2E]" />
+      </div>
+    )
+  }
+
   const clientBilling = allBilling
     .filter((b) => b.clientId === clientId)
     .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime())

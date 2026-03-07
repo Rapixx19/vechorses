@@ -6,19 +6,18 @@
  * DEPENDS ON: modules/billing, modules/clients
  * CONSUMED BY: Next.js routing
  * TESTS: app/billing/page.test.tsx
- * LAST CHANGED: 2026-03-06 — Added two-tab layout with client cards
+ * LAST CHANGED: 2026-03-07 — V2: Wired to Supabase via useBilling hook
  */
 
 // 🔴 RED ZONE — billing data is written by external freelancer, we only read
 
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Plus, FileText, Download } from "lucide-react"
 import {
   useBilling,
   useSettings,
-  useCreateInvoice,
   BillingStats,
   BillingFilters,
   BillingTable,
@@ -36,12 +35,16 @@ type ViewTab = "by_client" | "all_transactions"
 
 export default function BillingPage() {
   // All hooks must be called before any conditional returns
-  const billingItems = useBilling()
+  const { items: billingItems, isLoading: billingLoading } = useBilling()
   const { clients, isLoading: clientsLoading } = useClients()
   const settings = useSettings()
-  const createInvoice = useCreateInvoice()
-  const [localItems, setLocalItems] = useState(billingItems)
+  const [localItems, setLocalItems] = useState<BillingLineItem[]>([])
   const [activeTab, setActiveTab] = useState<ViewTab>("by_client")
+
+  // Sync localItems with billingItems from hook
+  useEffect(() => {
+    setLocalItems(billingItems)
+  }, [billingItems])
   const [filters, setFilters] = useState<BillingFilterState>({ search: "", status: "all", serviceType: "all", dateRange: "all" })
   const [selectedItem, setSelectedItem] = useState<BillingLineItem | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
@@ -89,7 +92,7 @@ export default function BillingPage() {
     })
   }, [localItems, clients, filters])
 
-  if (clientsLoading) {
+  if (clientsLoading || billingLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
@@ -216,8 +219,9 @@ export default function BillingPage() {
           lineItems={invoiceClient.items}
           settings={settings}
           onClose={() => setInvoiceClient(null)}
-          onSave={(invoice: Invoice) => {
-            createInvoice(invoice.clientId, invoice.lineItems, invoice.taxRate, invoice.notes)
+          onSave={(_invoice: Invoice) => {
+            // Invoice is created by InvoiceBuilder via useCreateInvoice hook
+            // Mark included line items as invoiced in local state
             setLocalItems((prev) => prev.map((i) => (invoiceClient.items.some((ii) => ii.id === i.id) ? { ...i, status: "invoiced" as const } : i)))
             setInvoiceClient(null)
           }}

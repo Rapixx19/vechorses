@@ -1,12 +1,12 @@
 /**
  * FILE: modules/billing/components/InvoiceBuilder.tsx
  * ZONE: 🔴 Red
- * PURPOSE: Invoice creation dialog with live preview
+ * PURPOSE: Invoice creation dialog with live preview and Supabase integration
  * EXPORTS: InvoiceBuilder
- * DEPENDS ON: lib/types.ts, InvoicePreview, InvoiceLineItemRow, generatePdf, lucide-react
- * CONSUMED BY: ClientBillingCard
+ * DEPENDS ON: lib/types.ts, InvoicePreview, InvoiceLineItemRow, generatePdf, useCreateInvoice, lucide-react
+ * CONSUMED BY: ClientBillingCard, app/billing/page.tsx
  * TESTS: modules/billing/tests/InvoiceBuilder.test.tsx
- * LAST CHANGED: 2026-03-06 — Initial creation for Phase 7b
+ * LAST CHANGED: 2026-03-07 — V2: Wired to Supabase via useCreateInvoice
  */
 
 // 🔴 RED ZONE — billing invoice builder, handle with care
@@ -18,7 +18,8 @@ import { X, Plus, Eye, Download, Send, Save } from "lucide-react"
 import { InvoicePreview } from "./InvoicePreview"
 import { InvoiceLineItemRow } from "./InvoiceLineItemRow"
 import { generateInvoicePdf } from "../services/generatePdf"
-import type { Client, BillingLineItem, StableSettings, Invoice } from "@/lib/types"
+import { useCreateInvoice } from "../hooks/useInvoices"
+import type { Client, BillingLineItem, StableSettings, Invoice, InvoiceStatus } from "@/lib/types"
 
 interface InvoiceBuilderProps {
   clientId: string
@@ -30,6 +31,7 @@ interface InvoiceBuilderProps {
 }
 
 export function InvoiceBuilder({ clientId, client, lineItems, settings, onClose, onSave }: InvoiceBuilderProps) {
+  const { createInvoice } = useCreateInvoice()
   const [invoiceNumber, setInvoiceNumber] = useState(`${settings.invoicePrefix}-${settings.invoiceStartNumber}`)
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split("T")[0])
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
@@ -39,6 +41,8 @@ export function InvoiceBuilder({ clientId, client, lineItems, settings, onClose,
     lineItems.map((item) => ({ ...item, included: true }))
   )
   const [showPreview, setShowPreview] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const includedItems = items.filter((i) => i.included)
   const subtotal = includedItems.reduce((sum, i) => sum + i.amountCents, 0)
@@ -59,8 +63,33 @@ export function InvoiceBuilder({ clientId, client, lineItems, settings, onClose,
   const handleRemove = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx))
   const handleAddItem = () => setItems((prev) => [...prev, { id: `custom-${Date.now()}`, clientId, serviceType: "other", description: "", amountCents: 0, currency: "EUR", status: "pending", serviceDate: issueDate, createdAt: new Date().toISOString(), included: true, isCustom: true }])
 
-  const handleSaveDraft = () => { onSave({ ...invoice, status: "draft" }); onClose() }
-  const handleMarkSent = () => { onSave({ ...invoice, status: "sent" }); onClose() }
+  const handleSaveInvoice = async (status: InvoiceStatus) => {
+    setIsSaving(true)
+    setSaveError(null)
+
+    const result = await createInvoice({
+      clientId,
+      lineItems: includedItems,
+      invoiceNumber,
+      taxRate: taxRate || undefined,
+      notes: notes || undefined,
+      issuedDate: issueDate,
+      dueDate,
+      status,
+    })
+
+    if (result.success && result.invoice) {
+      onSave(result.invoice)
+      onClose()
+    } else {
+      setSaveError(result.error || "Failed to save invoice")
+    }
+
+    setIsSaving(false)
+  }
+
+  const handleSaveDraft = () => handleSaveInvoice("draft")
+  const handleMarkSent = () => handleSaveInvoice("sent")
   const handleDownloadPdf = () => { generateInvoicePdf("invoice-preview", `${invoiceNumber}-${client.fullName.replace(/\s+/g, "-")}.pdf`) }
 
   if (showPreview) {
@@ -104,11 +133,16 @@ export function InvoiceBuilder({ clientId, client, lineItems, settings, onClose,
               <div className="flex justify-between text-lg font-bold pt-2 border-t border-[var(--border)]"><span>Total</span><span>{formatAmount(total)}</span></div>
             </div>
           </div>
+          {saveError && (
+            <div className="mt-4 p-3 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              {saveError}
+            </div>
+          )}
           <div className="flex gap-2 mt-6">
-            <button onClick={handleSaveDraft} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538]"><Save className="h-4 w-4" />Save Draft</button>
+            <button onClick={handleSaveDraft} disabled={isSaving} className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium bg-[#1A1A2E] text-[var(--text-primary)] hover:bg-[#252538] disabled:opacity-50"><Save className="h-4 w-4" />{isSaving ? "Saving..." : "Save Draft"}</button>
             <button onClick={() => setShowPreview(true)} className="flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium bg-blue-900/30 text-blue-400 hover:bg-blue-900/50"><Eye className="h-4 w-4" />Preview</button>
             <button onClick={handleDownloadPdf} className="flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium bg-amber-900/30 text-amber-400 hover:bg-amber-900/50"><Download className="h-4 w-4" />PDF</button>
-            <button onClick={handleMarkSent} className="flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}><Send className="h-4 w-4" />Send</button>
+            <button onClick={handleMarkSent} disabled={isSaving} className="flex items-center justify-center gap-2 px-4 py-2 rounded text-sm font-medium text-white disabled:opacity-50" style={{ backgroundColor: "#2C5F2E" }}><Send className="h-4 w-4" />{isSaving ? "Saving..." : "Send"}</button>
           </div>
         </div>
         {/* Right Panel - Live Preview */}

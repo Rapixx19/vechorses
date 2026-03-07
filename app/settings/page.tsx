@@ -6,7 +6,7 @@
  * DEPENDS ON: modules/billing, modules/clients, modules/settings
  * CONSUMED BY: Next.js routing
  * TESTS: app/settings/page.test.tsx
- * LAST CHANGED: 2026-03-06 — Added Team tab for team management
+ * LAST CHANGED: 2026-03-07 — V2: Updated useInvoices hook for Supabase integration
  */
 
 // 🔴 RED ZONE — billing settings, handle with care
@@ -35,12 +35,12 @@ export default function SettingsPage() {
   // All hooks must be called before any conditional returns
   const settings = useSettings()
   const updateSettings = useUpdateSettings()
-  const invoices = useInvoices()
+  const { invoices, isLoading: invoicesLoading } = useInvoices()
   const { clients, isLoading: clientsLoading } = useClients()
   const [activeTab, setActiveTab] = useState<SettingsTab>("stable")
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null)
 
-  if (clientsLoading) {
+  if (clientsLoading || invoicesLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
