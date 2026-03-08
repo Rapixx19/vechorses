@@ -40,7 +40,7 @@ async function getStableContext(stableId: string) {
     supabaseAdmin.from("stables").select("*").eq("id", stableId).single(),
     supabaseAdmin.from("horses").select("id, name, breed").eq("stable_id", stableId).eq("is_active", true).limit(50),
     supabaseAdmin.from("clients").select("id, full_name, email").eq("stable_id", stableId).eq("is_active", true).limit(50),
-    supabaseAdmin.from("staff_members").select("id, full_name, status_detail").eq("stable_id", stableId).eq("is_active", true).limit(20),
+    supabaseAdmin.from("team_members").select("id, full_name, role").eq("stable_id", stableId).eq("is_active", true).limit(20),
     supabaseAdmin.from("calendar_events").select("id, title, start_time, category").eq("stable_id", stableId).gte("start_time", new Date().toISOString()).limit(20),
   ])
 
@@ -62,7 +62,7 @@ function buildSystemPrompt(context: Awaited<ReturnType<typeof getStableContext>>
 CURRENT STABLE DATA:
 - Horses: ${context.horses.map((h) => h.name).join(", ") || "None registered"}
 - Clients: ${context.clients.map((c) => c.full_name).join(", ") || "None registered"}
-- Staff: ${context.staff.map((s) => `${s.full_name} (${s.status_detail})`).join(", ") || "None registered"}
+- Staff: ${context.staff.map((s) => `${s.full_name} (${s.role})`).join(", ") || "None registered"}
 - Upcoming events: ${context.upcomingEvents.length} scheduled
 
 TODAY: ${new Date().toISOString().split("T")[0]}
