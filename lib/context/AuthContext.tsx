@@ -6,7 +6,7 @@
  * DEPENDS ON: lib/types.ts, lib/supabase.ts, lib/mock
  * CONSUMED BY: app/layout.tsx, lib/hooks/useAuth.ts
  * TESTS: lib/context/AuthContext.test.tsx
- * LAST CHANGED: 2026-03-07 — Chrome-compatible auth with timeout fallback
+ * LAST CHANGED: 2026-03-08 — Redirect to onboarding after registration
  */
 
 "use client"
@@ -280,7 +280,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           stableName: stableName,
         })
 
-        router.push("/dashboard")
+        // BREADCRUMB: Redirect to onboarding for new stable owners
+        router.push("/onboarding")
       } catch (error) {
         console.error("Registration error:", error)
         throw error
