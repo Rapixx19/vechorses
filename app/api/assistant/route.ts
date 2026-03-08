@@ -253,9 +253,10 @@ export async function POST(request: NextRequest) {
       responseTime,
     })
   } catch (error) {
-    console.error("Assistant API error:", error)
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("Assistant API error:", errorMessage, error)
     return NextResponse.json(
-      { error: "Failed to process request" },
+      { error: "Failed to process request", details: errorMessage },
       { status: 500 }
     )
   }
