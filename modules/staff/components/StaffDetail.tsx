@@ -12,7 +12,7 @@
 "use client"
 
 import { useState } from "react"
-import { X, Mail, Phone, MapPin, Calendar, AlertCircle, User, Pencil, Check, Trash2, Plus } from "lucide-react"
+import { X, Mail, Phone, MapPin, Calendar, Pencil, Check, Trash2, Plus } from "lucide-react"
 import { useStaffTasks, useStaffActions, useUpdateStaff } from "../hooks/useStaff"
 import type { StaffMember, StaffTask, StaffStatusDetail, TaskPriority } from "@/lib/types"
 

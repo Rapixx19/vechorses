@@ -19,9 +19,7 @@ import {
   LayoutGrid,
   List,
   CalendarDays,
-  Phone,
   MoreHorizontal,
-  Briefcase,
 } from "lucide-react"
 import { useStaff, useUpdateStaff, useStaffTasks } from "../hooks/useStaff"
 import { useHorses } from "@/modules/horses"

@@ -48,7 +48,6 @@ export function FloorPlanCanvas({
   onLayoutChange,
   onSave,
   onCancel,
-  onStallClick,
   isSaving,
 }: FloorPlanCanvasProps) {
   const [selectedTool, setSelectedTool] = useState<ToolType>("stall-standard")

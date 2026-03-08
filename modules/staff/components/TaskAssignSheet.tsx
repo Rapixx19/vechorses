@@ -61,7 +61,6 @@ export function TaskAssignSheet({
   onClose,
   onSuccess,
   initialDate,
-  createCalendarEvent = false,
 }: TaskAssignSheetProps) {
   const { assignTask } = useStaffActions()
 

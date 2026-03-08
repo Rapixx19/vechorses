@@ -11,7 +11,7 @@
 
 "use client"
 
-import { X, MapPin, Calendar, Clock, User, Pencil, Trash2, Tag } from "lucide-react"
+import { X, MapPin, Calendar, Clock, Pencil, Trash2, Tag } from "lucide-react"
 import type { CalendarEvent, StaffMember } from "@/lib/types"
 import { useDeleteEvent } from "../hooks/useCalendar"
 

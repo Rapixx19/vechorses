@@ -12,7 +12,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, X, GripVertical, Trash2 } from "lucide-react"
+import { Plus, GripVertical, Trash2 } from "lucide-react"
 import type { Stall, StallType } from "@/lib/types"
 
 interface StableBuilderProps {
@@ -74,7 +74,7 @@ export function StableBuilder({
     setDraggedId(stallId)
   }
 
-  const handleDragOver = (e: React.DragEvent, rowIndex: number, colIndex: number) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
   }
 
@@ -140,7 +140,7 @@ export function StableBuilder({
                 key={stall.id}
                 draggable
                 onDragStart={() => handleDragStart(stall.id)}
-                onDragOver={(e) => handleDragOver(e, rowIndex, colIndex)}
+                onDragOver={(e) => handleDragOver(e)}
                 onDrop={() => handleDrop(rowIndex, colIndex)}
                 className={`relative aspect-square p-2 rounded-lg border-2 ${
                   stall.horseId ? "border-green-600 bg-green-900/15" : "border-gray-600 bg-[#1A1A2E]"
@@ -209,7 +209,7 @@ export function StableBuilder({
           return (
             <button
               key={`empty-${idx}`}
-              onDragOver={(e) => handleDragOver(e, rowIndex, colIndex)}
+              onDragOver={(e) => handleDragOver(e)}
               onDrop={() => handleDrop(rowIndex, colIndex)}
               onClick={() => onAddStall(idx, rowIndex, colIndex)}
               className="aspect-square rounded-lg border-2 border-dashed border-gray-700 bg-[#0F1117] flex items-center justify-center hover:border-green-600/50 hover:bg-green-900/10 transition-colors"

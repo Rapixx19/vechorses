@@ -41,7 +41,7 @@ interface BillingSettingsFormProps {
   clients?: Client[]
 }
 
-export function BillingSettingsForm({ settings, onSave, services = [], clients = [] }: BillingSettingsFormProps) {
+export function BillingSettingsForm({ settings, onSave, services = [] }: BillingSettingsFormProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)

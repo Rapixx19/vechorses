@@ -159,7 +159,7 @@ export function StallGrid() {
   }
 
   // BREADCRUMB: Handle assign horse
-  const handleAssign = async (_horseId: string) => {
+  const handleAssign = async () => {
     if (sheetState?.type === "assign") {
       await updateStall(sheetState.stall.id, {})
       refetch()

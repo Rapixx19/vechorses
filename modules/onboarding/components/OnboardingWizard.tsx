@@ -50,7 +50,7 @@ export function OnboardingWizard() {
   const { currentUser, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
-  const [skippedSteps, setSkippedSteps] = useState<number[]>([])
+  const [, setSkippedSteps] = useState<number[]>([])
   const [isInitialized, setIsInitialized] = useState(false)
   const supabase = useMemo(() => createClient(), [])
 

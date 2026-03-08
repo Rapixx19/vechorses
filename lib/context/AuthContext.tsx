@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // BREADCRUMB: Listen for auth changes but ignore INITIAL_SESSION
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event) => {
       if (!mounted) return
 
       // Ignore initial session - already handled by initAuth

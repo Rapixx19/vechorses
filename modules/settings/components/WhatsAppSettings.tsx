@@ -12,7 +12,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { MessageCircle, Check, Phone, Shield, ExternalLink, AlertCircle } from "lucide-react"
+import { MessageCircle, Check, Phone, Shield, AlertCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase"
 import { useAuth } from "@/lib/hooks/useAuth"
 

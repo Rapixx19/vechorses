@@ -64,7 +64,7 @@ export function InviteTeamStep({ onNext, onBack, onSkip, stableId }: OnboardingS
       } else {
         handleCopy()
       }
-    } catch (err) {
+    } catch {
       // User cancelled share
     }
   }
