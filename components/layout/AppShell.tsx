@@ -16,6 +16,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
+  Sparkles,
   Rabbit,
   Users,
   Users2,
@@ -40,6 +41,7 @@ import type { ModuleName } from "@/lib/types"
 // BREADCRUMB: Nav items with module mapping for permission checks
 const navItems: { href: string; label: string; icon: React.ElementType; module: ModuleName }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, module: "dashboard" },
+  { href: "/assistant", label: "Assistant", icon: Sparkles, module: "assistant" },
   { href: "/horses", label: "Horses", icon: Rabbit, module: "horses" },
   { href: "/clients", label: "Clients", icon: Users, module: "clients" },
   { href: "/staff", label: "Staff", icon: Users2, module: "staff" },
