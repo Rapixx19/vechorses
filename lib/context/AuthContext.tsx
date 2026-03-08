@@ -6,13 +6,12 @@
  * DEPENDS ON: lib/types.ts, lib/supabase.ts, lib/mock
  * CONSUMED BY: app/layout.tsx, lib/hooks/useAuth.ts
  * TESTS: lib/context/AuthContext.test.tsx
- * LAST CHANGED: 2026-03-08 — Redirect to onboarding after registration
+ * LAST CHANGED: 2026-03-08 — Fix double login bug with proper auth flow
  */
 
 "use client"
 
 import { createContext, useState, useCallback, useEffect, useMemo, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { getDefaultPermissions } from "@/lib/mock"
 import type { AuthUser, ModulePermission } from "@/lib/types"
@@ -20,7 +19,7 @@ import type { AuthUser, ModulePermission } from "@/lib/types"
 interface AuthContextType {
   currentUser: AuthUser | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: Error | null }>
   logout: () => void
   register: (fullName: string, email: string, password: string, stableName: string) => Promise<void>
   joinWithCode: (code: string, fullName: string, email: string, password: string) => Promise<void>
@@ -28,9 +27,7 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null)
 
-// Fetches profile and builds AuthUser from Supabase data
-// If profile doesn't exist, creates via API route (uses service role to bypass RLS)
-// If stable_id is missing, attempts to link to an owned stable
+// BREADCRUMB: Fetches profile and builds AuthUser from Supabase data
 async function fetchUserProfile(
   supabase: ReturnType<typeof createClient>,
   userId: string,
@@ -101,18 +98,11 @@ async function fetchUserProfile(
       stableName = ownedStable.stable_name
 
       // Update profile with stable_id
-      await supabase
-        .from("profiles")
-        .update({ stable_id: stableId })
-        .eq("id", userId)
+      await supabase.from("profiles").update({ stable_id: stableId }).eq("id", userId)
     }
   } else {
     // Fetch stable name for display
-    const { data: stable } = await supabase
-      .from("stables")
-      .select("stable_name")
-      .eq("id", stableId)
-      .maybeSingle()
+    const { data: stable } = await supabase.from("stables").select("stable_name").eq("id", stableId).maybeSingle()
     stableName = stable?.stable_name
   }
 
@@ -131,9 +121,8 @@ async function fetchUserProfile(
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
 
-  // Memoize supabase client with error handling for localStorage issues
+  // BREADCRUMB: Singleton supabase client
   const supabase = useMemo(() => {
     try {
       return createClient()
@@ -143,58 +132,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Restore session on mount and listen for auth changes
+  // BREADCRUMB: Initialize auth state on mount - fixed race condition
   useEffect(() => {
     if (!supabase) {
       setIsLoading(false)
       return
     }
 
-    // Timeout fallback for Chrome compatibility
-    const timeout = setTimeout(() => {
-      console.warn("Auth session check timed out")
-      setIsLoading(false)
-    }, 5000)
+    let mounted = true
 
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        clearTimeout(timeout)
+    const initAuth = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (!mounted) return
+
         if (session?.user) {
-          fetchUserProfile(supabase, session.user.id, session.user.email)
-            .then(setCurrentUser)
-            .finally(() => setIsLoading(false))
+          const profile = await fetchUserProfile(supabase, session.user.id, session.user.email)
+          if (mounted) {
+            setCurrentUser(profile)
+            setIsLoading(false)
+          }
         } else {
+          setCurrentUser(null)
           setIsLoading(false)
         }
-      })
-      .catch(() => {
-        clearTimeout(timeout)
-        setIsLoading(false)
-      })
+      } catch (e) {
+        console.error("Auth init error:", e)
+        if (mounted) {
+          setCurrentUser(null)
+          setIsLoading(false)
+        }
+      }
+    }
 
+    initAuth()
+
+    // BREADCRUMB: Listen for auth changes but ignore INITIAL_SESSION
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        fetchUserProfile(supabase, session.user.id, session.user.email).then(setCurrentUser)
-      } else {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+
+      // Ignore initial session - already handled by initAuth
+      if (event === "INITIAL_SESSION") return
+
+      // Ignore token refresh - silent operation
+      if (event === "TOKEN_REFRESHED") return
+
+      if (event === "SIGNED_OUT") {
         setCurrentUser(null)
+        setIsLoading(false)
       }
+
+      // SIGNED_IN is handled by login function directly
     })
 
     return () => {
-      clearTimeout(timeout)
+      mounted = false
       subscription.unsubscribe()
     }
   }, [supabase])
 
+  // BREADCRUMB: Login function - returns error instead of throwing
   const login = useCallback(
-    async (email: string, password: string) => {
-      if (!supabase) throw new Error("Supabase client not available")
+    async (email: string, password: string, rememberMe: boolean = false): Promise<{ error: Error | null }> => {
+      if (!supabase) return { error: new Error("Supabase client not available") }
 
       try {
         setIsLoading(true)
+
+        // Store remember me preference
+        if (typeof window !== "undefined") {
+          if (rememberMe) {
+            localStorage.setItem("vechorses-email", email)
+          } else {
+            localStorage.removeItem("vechorses-email")
+          }
+        }
 
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -202,34 +219,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
 
         if (error) {
-          console.error("Login error:", error)
-          throw new Error(error.message)
+          setIsLoading(false)
+          return { error: new Error(error.message) }
         }
 
-        // Wait for profile to be fetched before completing login
-        if (data.user) {
+        if (data.user && data.session) {
           const profile = await fetchUserProfile(supabase, data.user.id, data.user.email)
           setCurrentUser(profile)
+          setIsLoading(false)
+          return { error: null }
         }
 
-        // Only redirect after user is set
-        router.push("/dashboard")
-      } catch (error) {
-        console.error("Login catch:", error)
-        throw error
-      } finally {
         setIsLoading(false)
+        return { error: new Error("No session returned") }
+      } catch (err) {
+        setIsLoading(false)
+        return { error: err instanceof Error ? err : new Error("Login failed") }
       }
     },
-    [supabase, router]
+    [supabase]
   )
 
   const logout = useCallback(async () => {
     if (!supabase) return
     await supabase.auth.signOut()
     setCurrentUser(null)
-    router.push("/login")
-  }, [supabase, router])
+    // Use hard navigation to clear all state
+    window.location.href = "/login"
+  }, [supabase])
 
   const register = useCallback(
     async (fullName: string, email: string, password: string, stableName: string) => {
@@ -280,16 +297,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           stableName: stableName,
         })
 
+        setIsLoading(false)
         // BREADCRUMB: Redirect to onboarding for new stable owners
-        router.push("/onboarding")
+        window.location.href = "/onboarding"
       } catch (error) {
         console.error("Registration error:", error)
-        throw error
-      } finally {
         setIsLoading(false)
+        throw error
       }
     },
-    [supabase, router]
+    [supabase]
   )
 
   const joinWithCode = useCallback(
@@ -329,9 +346,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsLoading(false)
-      router.push("/dashboard")
+      window.location.href = "/dashboard"
     },
-    [supabase, router]
+    [supabase]
   )
 
   return (

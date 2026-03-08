@@ -48,8 +48,8 @@ export default function SettingsPage() {
     )
   }
 
-  const handleSave = (updates: Partial<StableSettings>) => {
-    updateSettings(updates)
+  const handleSave = async (updates: Partial<StableSettings>) => {
+    await updateSettings(updates)
   }
 
   const handlePreviewInvoice = (invoice: Invoice) => {

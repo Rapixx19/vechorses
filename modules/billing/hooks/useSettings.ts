@@ -49,10 +49,12 @@ interface StableRow {
   country: string | null
   phone: string | null
   email: string | null
+  website: string | null
   address: string | null
   city: string | null
   vat_number: string | null
   logo_url: string | null
+  logo_data: string | null
   bank_name: string | null
   bank_iban: string | null
   bank_bic: string | null
@@ -109,8 +111,10 @@ export function useSettings(): StableSettings {
         country: row.country || "",
         phone: row.phone || "",
         email: row.email || "",
+        website: row.website || undefined,
         vatNumber: row.vat_number || undefined,
         logoUrl: row.logo_url || undefined,
+        logoData: row.logo_data || undefined,
         bankName: row.bank_name || undefined,
         bankIban: row.bank_iban || undefined,
         bankBic: row.bank_bic || undefined,
@@ -154,8 +158,10 @@ export function useUpdateSettings(): (updates: Partial<StableSettings>) => Promi
       if (updates.country !== undefined) dbUpdates.country = updates.country
       if (updates.phone !== undefined) dbUpdates.phone = updates.phone
       if (updates.email !== undefined) dbUpdates.email = updates.email
+      if (updates.website !== undefined) dbUpdates.website = updates.website
       if (updates.vatNumber !== undefined) dbUpdates.vat_number = updates.vatNumber
       if (updates.logoUrl !== undefined) dbUpdates.logo_url = updates.logoUrl
+      if (updates.logoData !== undefined) dbUpdates.logo_data = updates.logoData
       if (updates.bankName !== undefined) dbUpdates.bank_name = updates.bankName
       if (updates.bankIban !== undefined) dbUpdates.bank_iban = updates.bankIban
       if (updates.bankBic !== undefined) dbUpdates.bank_bic = updates.bankBic

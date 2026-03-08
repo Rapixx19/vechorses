@@ -201,8 +201,10 @@ export interface StableSettings {
   country: string
   phone: string
   email: string
+  website?: string
   vatNumber?: string
   logoUrl?: string
+  logoData?: string // Base64 encoded logo for V1 (before Supabase Storage)
   bankName?: string
   bankIban?: string
   bankBic?: string

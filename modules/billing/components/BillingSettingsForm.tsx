@@ -1,23 +1,23 @@
 /**
  * FILE: modules/billing/components/BillingSettingsForm.tsx
- * ZONE: 🔴 Red
+ * ZONE: Red
  * PURPOSE: Form for editing billing and invoice settings including auto-invoicing
  * EXPORTS: BillingSettingsForm
  * DEPENDS ON: react-hook-form, zod, lib/types.ts
  * CONSUMED BY: app/settings/page.tsx
  * TESTS: modules/billing/tests/BillingSettingsForm.test.tsx
- * LAST CHANGED: 2026-03-07 — Added auto invoice scheduling section
+ * LAST CHANGED: 2026-03-08 — Added proper save feedback with loading state
  */
 
-// 🔴 RED ZONE — billing settings form, handle with care
+// RED ZONE — billing settings form, handle with care
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Zap, Calendar, Mail } from "lucide-react"
+import { Zap, Calendar, Mail, Loader2, Check } from "lucide-react"
 import type { StableSettings, Service, Client } from "@/lib/types"
 
 const schema = z.object({
@@ -36,13 +36,23 @@ type FormData = z.infer<typeof schema>
 
 interface BillingSettingsFormProps {
   settings: StableSettings
-  onSave: (data: Partial<StableSettings>) => void
+  onSave: (data: Partial<StableSettings>) => Promise<void>
   services?: Service[]
   clients?: Client[]
 }
 
 export function BillingSettingsForm({ settings, onSave, services = [], clients = [] }: BillingSettingsFormProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       billingDayOfMonth: settings.billingDayOfMonth,
@@ -57,6 +67,26 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
     },
   })
 
+  // Reset form when settings change
+  useEffect(() => {
+    reset({
+      billingDayOfMonth: settings.billingDayOfMonth,
+      invoicePrefix: settings.invoicePrefix,
+      invoiceStartNumber: settings.invoiceStartNumber,
+      currency: settings.currency,
+      bankName: settings.bankName || "",
+      bankIban: settings.bankIban || "",
+      bankBic: settings.bankBic || "",
+      invoiceNotes: settings.invoiceNotes || "",
+      invoiceFooter: settings.invoiceFooter || "",
+    })
+    setAutoEnabled(settings.autoInvoiceEnabled || false)
+    setAutoDay(settings.autoInvoiceDay || 1)
+    setAutoClients(settings.autoInvoiceClients || "all")
+    setAutoServices(settings.autoInvoiceServices || [])
+    setAutoEmail(settings.autoInvoiceEmailEnabled || false)
+  }, [settings, reset])
+
   // Auto invoice state
   const [autoEnabled, setAutoEnabled] = useState(settings.autoInvoiceEnabled || false)
   const [autoDay, setAutoDay] = useState(settings.autoInvoiceDay || 1)
@@ -64,46 +94,58 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
   const [autoServices, setAutoServices] = useState<string[]>(settings.autoInvoiceServices || [])
   const [autoEmail, setAutoEmail] = useState(settings.autoInvoiceEmailEnabled || false)
 
-  // BREADCRUMB: Check if today is invoice day
+  // Check if today is invoice day
   const today = new Date().getDate()
   const isInvoiceDay = autoEnabled && today === autoDay
 
-  const inputClass = "w-full px-3 py-2 rounded-md bg-[#252538] border border-[var(--border)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
+  const inputClass =
+    "w-full px-3 py-2 rounded-md bg-[#252538] border border-[var(--border)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2C5F2E]"
   const labelClass = "block text-xs font-medium text-[var(--text-muted)] mb-1"
   const errorClass = "text-xs text-red-400 mt-1"
 
   const toggleService = (serviceId: string) => {
-    setAutoServices(prev =>
-      prev.includes(serviceId)
-        ? prev.filter(id => id !== serviceId)
-        : [...prev, serviceId]
-    )
+    setAutoServices((prev) => (prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId]))
   }
 
   const handleGenerateNow = async () => {
+    setIsGenerating(true)
     try {
       const res = await fetch("/api/generate-invoices", { method: "POST" })
       const data = await res.json()
       if (data.success) {
-        alert(`Generated ${data.count} invoice(s) successfully!`)
+        setSaveSuccess(true)
+        setTimeout(() => setSaveSuccess(false), 3000)
       } else {
-        alert(`Failed to generate invoices: ${data.error}`)
+        setSaveError(`Failed to generate invoices: ${data.error}`)
       }
     } catch {
-      alert("Failed to generate invoices")
+      setSaveError("Failed to generate invoices")
+    } finally {
+      setIsGenerating(false)
     }
   }
 
-  const onSubmit = (data: FormData) => {
-    onSave({
-      ...data,
-      autoInvoiceEnabled: autoEnabled,
-      autoInvoiceDay: autoDay,
-      autoInvoiceClients: autoClients,
-      autoInvoiceServices: autoServices,
-      autoInvoiceEmailEnabled: autoEmail,
-    })
-    alert("Billing settings saved successfully!")
+  const onSubmit = async (data: FormData) => {
+    setIsSaving(true)
+    setSaveError(null)
+    setSaveSuccess(false)
+
+    try {
+      await onSave({
+        ...data,
+        autoInvoiceEnabled: autoEnabled,
+        autoInvoiceDay: autoDay,
+        autoInvoiceClients: autoClients,
+        autoInvoiceServices: autoServices,
+        autoInvoiceEmailEnabled: autoEmail,
+      })
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // Calculate next invoice date
@@ -133,9 +175,17 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
             <button
               type="button"
               onClick={handleGenerateNow}
-              className="px-4 py-2 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-500"
+              disabled={isGenerating}
+              className="px-4 py-2 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-500 disabled:opacity-50 flex items-center gap-2"
             >
-              Generate Now
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate Now"
+              )}
             </button>
           </div>
         </div>
@@ -156,7 +206,9 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
             onClick={() => setAutoEnabled(!autoEnabled)}
             className={`relative w-11 h-6 rounded-full transition-colors ${autoEnabled ? "bg-green-600" : "bg-gray-600"}`}
           >
-            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${autoEnabled ? "translate-x-5" : ""}`} />
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${autoEnabled ? "translate-x-5" : ""}`}
+            />
           </button>
         </div>
 
@@ -171,8 +223,10 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
                   onChange={(e) => setAutoDay(Number(e.target.value))}
                   className="w-20 px-3 py-2 rounded-md bg-[#1A1A2E] border border-[var(--border)] text-sm text-white"
                 >
-                  {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
-                    <option key={day} value={day}>{day}</option>
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                    <option key={day} value={day}>
+                      {day}
+                    </option>
                   ))}
                 </select>
                 <span className="text-sm text-gray-400">of each month</span>
@@ -205,16 +259,18 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
               <div>
                 <label className="block text-xs text-gray-400 mb-2">Default services to include</label>
                 <div className="flex flex-wrap gap-2">
-                  {services.filter(s => s.isActive).map(service => (
-                    <button
-                      key={service.id}
-                      type="button"
-                      onClick={() => toggleService(service.id)}
-                      className={`px-2 py-1 rounded text-xs font-medium ${autoServices.includes(service.id) ? "bg-green-600 text-white" : "bg-gray-700 text-gray-300"}`}
-                    >
-                      {service.name}
-                    </button>
-                  ))}
+                  {services
+                    .filter((s) => s.isActive)
+                    .map((service) => (
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => toggleService(service.id)}
+                        className={`px-2 py-1 rounded text-xs font-medium ${autoServices.includes(service.id) ? "bg-green-600 text-white" : "bg-gray-700 text-gray-300"}`}
+                      >
+                        {service.name}
+                      </button>
+                    ))}
                 </div>
               </div>
             )}
@@ -230,7 +286,9 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
                 onClick={() => setAutoEmail(!autoEmail)}
                 className={`relative w-11 h-6 rounded-full transition-colors ${autoEmail ? "bg-green-600" : "bg-gray-600"}`}
               >
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${autoEmail ? "translate-x-5" : ""}`} />
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${autoEmail ? "translate-x-5" : ""}`}
+                />
               </button>
             </div>
 
@@ -238,7 +296,10 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
             {nextInvoiceDate && (
               <div className="pt-2 border-t border-[var(--border)]">
                 <p className="text-xs text-gray-400">
-                  Next invoice date: <span className="text-white font-medium">{nextInvoiceDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
+                  Next invoice date:{" "}
+                  <span className="text-white font-medium">
+                    {nextInvoiceDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  </span>
                 </p>
               </div>
             )}
@@ -252,7 +313,13 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className={labelClass}>Auto-generate invoices on day</label>
-            <input type="number" min="1" max="28" {...register("billingDayOfMonth", { valueAsNumber: true })} className={inputClass} />
+            <input
+              type="number"
+              min="1"
+              max="28"
+              {...register("billingDayOfMonth", { valueAsNumber: true })}
+              className={inputClass}
+            />
             {errors.billingDayOfMonth && <p className={errorClass}>{errors.billingDayOfMonth.message}</p>}
           </div>
           <div>
@@ -262,7 +329,12 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
           </div>
           <div>
             <label className={labelClass}>Next Invoice Number</label>
-            <input type="number" min="1" {...register("invoiceStartNumber", { valueAsNumber: true })} className={inputClass} />
+            <input
+              type="number"
+              min="1"
+              {...register("invoiceStartNumber", { valueAsNumber: true })}
+              className={inputClass}
+            />
             {errors.invoiceStartNumber && <p className={errorClass}>{errors.invoiceStartNumber.message}</p>}
           </div>
         </div>
@@ -302,17 +374,53 @@ export function BillingSettingsForm({ settings, onSave, services = [], clients =
         <div className="space-y-3">
           <div>
             <label className={labelClass}>Payment Notes (appears at bottom of every invoice)</label>
-            <textarea {...register("invoiceNotes")} rows={2} className={inputClass} placeholder="e.g. Payment due within 30 days of invoice date" />
+            <textarea
+              {...register("invoiceNotes")}
+              rows={2}
+              className={inputClass}
+              placeholder="e.g. Payment due within 30 days of invoice date"
+            />
           </div>
           <div>
             <label className={labelClass}>Footer Message (thank you message on invoices)</label>
-            <textarea {...register("invoiceFooter")} rows={2} className={inputClass} placeholder="e.g. Thank you for your trust in our stable" />
+            <textarea
+              {...register("invoiceFooter")}
+              rows={2}
+              className={inputClass}
+              placeholder="e.g. Thank you for your trust in our stable"
+            />
           </div>
         </div>
       </div>
 
-      <button type="submit" className="w-full px-4 py-2 rounded-md text-sm font-medium text-white" style={{ backgroundColor: "#2C5F2E" }}>
-        Save Billing Settings
+      {/* Save Feedback */}
+      {saveError && (
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+          <p className="text-sm text-red-400">{saveError}</p>
+        </div>
+      )}
+
+      {saveSuccess && (
+        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2">
+          <Check className="h-4 w-4 text-green-400" />
+          <p className="text-sm text-green-400">Billing settings saved successfully</p>
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={isSaving}
+        className="w-full px-4 py-2 rounded-md text-sm font-medium text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity"
+        style={{ backgroundColor: "#2C5F2E" }}
+      >
+        {isSaving ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Saving...
+          </>
+        ) : (
+          "Save Billing Settings"
+        )}
       </button>
     </form>
   )
