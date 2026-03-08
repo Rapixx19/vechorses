@@ -405,8 +405,7 @@ export function InvoiceBuilder({ clientId: initialClientId, client: initialClien
                       <ServiceComboInput
                         value={item.description}
                         services={services}
-                        currency={settings.currency}
-                        onSelect={(service) => {
+                                                onSelect={(service) => {
                           updateLineItem(item.id, {
                             description: service.name,
                             serviceId: service.id,
@@ -500,8 +499,7 @@ export function InvoiceBuilder({ clientId: initialClientId, client: initialClien
                       <ServiceComboInput
                         value={item.description}
                         services={services}
-                        currency={settings.currency}
-                        onSelect={(service) => {
+                                                onSelect={(service) => {
                           updateLineItem(item.id, {
                             description: service.name,
                             serviceId: service.id,

@@ -19,7 +19,6 @@ import type { Service } from "@/lib/types"
 interface ServiceComboInputProps {
   value: string
   services: Service[]
-  currency: string
   onSelect: (service: Service) => void
   onChange: (description: string) => void
 }
@@ -27,7 +26,6 @@ interface ServiceComboInputProps {
 export function ServiceComboInput({
   value,
   services,
-  currency,
   onSelect,
   onChange,
 }: ServiceComboInputProps) {
