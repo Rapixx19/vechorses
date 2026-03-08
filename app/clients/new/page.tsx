@@ -1,61 +1,30 @@
 /**
  * FILE: app/clients/new/page.tsx
  * ZONE: Green
- * PURPOSE: Add new client form page
- * EXPORTS: default (NewClientPage)
+ * PURPOSE: Add new client page route with SSR disabled
+ * EXPORTS: default (NewClientPageRoute)
  * DEPENDS ON: modules/clients
  * CONSUMED BY: Next.js routing
  * TESTS: app/clients/new/page.test.tsx
- * LAST CHANGED: 2026-03-07 — Wired to Supabase via useCreateClient
+ * LAST CHANGED: 2026-03-08 — Disabled SSR to fix mobile hydration crash
  */
 
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { ClientForm, useCreateClient, type CreateClientInput } from "@/modules/clients"
+import dynamic from "next/dynamic"
 
-export default function NewClientPage() {
-  const router = useRouter()
-  const { addClient } = useCreateClient()
-  const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleSubmit = async (data: CreateClientInput) => {
-    setError(null)
-    setIsSubmitting(true)
-
-    const result = await addClient(data)
-
-    if (result.success) {
-      router.push("/clients")
-    } else {
-      setError(result.error || "Failed to create client")
-      setIsSubmitting(false)
-    }
+const NewClientPage = dynamic(
+  () => import("@/modules/clients").then((mod) => mod.NewClientPage),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-[#2C5F2E] border-t-transparent rounded-full" />
+      </div>
+    ),
   }
+)
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/clients" className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Add New Client</h2>
-      </div>
-      {error && (
-        <div className="p-4 rounded-md bg-red-500/10 border border-red-500/20 text-red-400">
-          {error}
-        </div>
-      )}
-      <div className="rounded-lg p-6" style={{ backgroundColor: "#1A1A2E" }}>
-        <ClientForm onSubmit={handleSubmit} />
-        {isSubmitting && (
-          <div className="mt-4 text-center text-[var(--text-muted)]">Saving...</div>
-        )}
-      </div>
-    </div>
-  )
+export default function NewClientPageRoute() {
+  return <NewClientPage />
 }

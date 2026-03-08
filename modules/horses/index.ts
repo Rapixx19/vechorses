@@ -25,3 +25,7 @@ export { HorsePhotos } from "./components/HorsePhotos"
 export { HorseOverviewTab } from "./components/HorseOverviewTab"
 export { DocumentList } from "./components/DocumentList"
 export { DocumentUpload } from "./components/DocumentUpload"
+
+// Page components
+export { NewHorsePage } from "./components/NewHorsePage"
+export { EditHorsePage } from "./components/EditHorsePage"

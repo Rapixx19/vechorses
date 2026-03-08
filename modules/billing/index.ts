@@ -40,3 +40,6 @@ export { InvoiceHistoryTable } from "./components/InvoiceHistoryTable"
 
 // Services
 export { generateInvoicePdf } from "./services/generatePdf"
+
+// Page components
+export { BillingPage } from "./components/BillingPage"

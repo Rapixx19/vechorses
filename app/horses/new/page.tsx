@@ -1,61 +1,30 @@
 /**
  * FILE: app/horses/new/page.tsx
  * ZONE: Green
- * PURPOSE: Add new horse form page
- * EXPORTS: default (NewHorsePage)
+ * PURPOSE: Add new horse page route with SSR disabled
+ * EXPORTS: default (NewHorsePageRoute)
  * DEPENDS ON: modules/horses
  * CONSUMED BY: Next.js routing
  * TESTS: app/horses/new/page.test.tsx
- * LAST CHANGED: 2026-03-07 — Wired to Supabase via useCreateHorse
+ * LAST CHANGED: 2026-03-08 — Disabled SSR to fix mobile hydration crash
  */
 
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { HorseForm, useCreateHorse, type CreateHorseInput } from "@/modules/horses"
+import dynamic from "next/dynamic"
 
-export default function NewHorsePage() {
-  const router = useRouter()
-  const { createHorse } = useCreateHorse()
-  const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const handleSubmit = async (data: CreateHorseInput) => {
-    setError(null)
-    setIsSubmitting(true)
-
-    const result = await createHorse(data)
-
-    if (result.success) {
-      router.push("/horses")
-    } else {
-      setError(result.error || "Failed to create horse")
-      setIsSubmitting(false)
-    }
+const NewHorsePage = dynamic(
+  () => import("@/modules/horses").then((mod) => mod.NewHorsePage),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-[#2C5F2E] border-t-transparent rounded-full" />
+      </div>
+    ),
   }
+)
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/horses" className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Add New Horse</h2>
-      </div>
-      {error && (
-        <div className="p-4 rounded-md bg-red-500/10 border border-red-500/20 text-red-400">
-          {error}
-        </div>
-      )}
-      <div className="rounded-lg p-6" style={{ backgroundColor: "#1A1A2E" }}>
-        <HorseForm onSubmit={handleSubmit} />
-        {isSubmitting && (
-          <div className="mt-4 text-center text-[var(--text-muted)]">Saving...</div>
-        )}
-      </div>
-    </div>
-  )
+export default function NewHorsePageRoute() {
+  return <NewHorsePage />
 }

@@ -6,8 +6,10 @@
  * DEPENDS ON: None
  * CONSUMED BY: DashboardPage
  * TESTS: modules/dashboard/tests/useTimeOfDay.test.ts
- * LAST CHANGED: 2026-03-07 — Initial creation for time-based theming
+ * LAST CHANGED: 2026-03-08 — Added use client directive for SSR fix
  */
+
+"use client"
 
 import { useState, useEffect } from "react"
 

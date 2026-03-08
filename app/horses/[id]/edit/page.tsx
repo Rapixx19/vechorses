@@ -1,61 +1,36 @@
 /**
  * FILE: app/horses/[id]/edit/page.tsx
  * ZONE: Green
- * PURPOSE: Edit horse form page
- * EXPORTS: default (EditHorsePage)
+ * PURPOSE: Edit horse page route with SSR disabled
+ * EXPORTS: default (EditHorsePageRoute)
  * DEPENDS ON: modules/horses
  * CONSUMED BY: Next.js routing
  * TESTS: app/horses/[id]/edit/page.test.tsx
- * LAST CHANGED: 2026-03-06 — Initial creation
+ * LAST CHANGED: 2026-03-08 — Disabled SSR to fix mobile hydration crash
  */
 
 "use client"
 
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { useHorses, HorseForm } from "@/modules/horses"
 import { use } from "react"
+import dynamic from "next/dynamic"
+
+const EditHorsePage = dynamic(
+  () => import("@/modules/horses").then((mod) => mod.EditHorsePage),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-[#2C5F2E] border-t-transparent rounded-full" />
+      </div>
+    ),
+  }
+)
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-export default function EditHorsePage({ params }: PageProps) {
+export default function EditHorsePageRoute({ params }: PageProps) {
   const { id } = use(params)
-  const router = useRouter()
-  const { horses, isLoading } = useHorses()
-  const horse = horses.find((h) => h.id === id)
-
-  const handleSubmit = (data: Parameters<typeof HorseForm>[0] extends { onSubmit: (d: infer T) => void } ? T : never) => {
-    // BREADCRUMB: V1 mock - just log and redirect. Real save comes in Phase 2
-    console.log("Update horse:", id, data)
-    router.push(`/horses/${id}`)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
-      </div>
-    )
-  }
-
-  if (!horse) {
-    return <p className="text-red-400">Horse not found</p>
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href={`/horses/${id}`} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Edit {horse.name}</h2>
-      </div>
-      <div className="rounded-lg p-6" style={{ backgroundColor: "#1A1A2E" }}>
-        <HorseForm initialData={horse} onSubmit={handleSubmit} isEditing />
-      </div>
-    </div>
-  )
+  return <EditHorsePage horseId={id} />
 }

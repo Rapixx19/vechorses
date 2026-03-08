@@ -22,3 +22,7 @@ export { ClientForm } from "./components/ClientForm"
 export { ClientDocumentList } from "./components/ClientDocumentList"
 export { ClientDocumentUpload } from "./components/ClientDocumentUpload"
 export { ClientBillingHistory } from "./components/ClientBillingHistory"
+
+// Page components
+export { NewClientPage } from "./components/NewClientPage"
+export { EditClientPage } from "./components/EditClientPage"

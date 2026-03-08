@@ -1,61 +1,36 @@
 /**
  * FILE: app/clients/[id]/edit/page.tsx
  * ZONE: Green
- * PURPOSE: Edit client form page
- * EXPORTS: default (EditClientPage)
+ * PURPOSE: Edit client page route with SSR disabled
+ * EXPORTS: default (EditClientPageRoute)
  * DEPENDS ON: modules/clients
  * CONSUMED BY: Next.js routing
  * TESTS: app/clients/[id]/edit/page.test.tsx
- * LAST CHANGED: 2026-03-06 — Initial creation
+ * LAST CHANGED: 2026-03-08 — Disabled SSR to fix mobile hydration crash
  */
 
 "use client"
 
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { useClients, ClientForm } from "@/modules/clients"
 import { use } from "react"
+import dynamic from "next/dynamic"
+
+const EditClientPage = dynamic(
+  () => import("@/modules/clients").then((mod) => mod.EditClientPage),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-[#2C5F2E] border-t-transparent rounded-full" />
+      </div>
+    ),
+  }
+)
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-export default function EditClientPage({ params }: PageProps) {
+export default function EditClientPageRoute({ params }: PageProps) {
   const { id } = use(params)
-  const router = useRouter()
-  const { clients, isLoading } = useClients()
-  const client = clients.find((c) => c.id === id)
-
-  const handleSubmit = (data: Parameters<typeof ClientForm>[0] extends { onSubmit: (d: infer T) => void } ? T : never) => {
-    // BREADCRUMB: V1 mock - just log and redirect. Real save comes in V2
-    console.log("Update client:", id, data)
-    router.push(`/clients/${id}`)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2C5F2E]" />
-      </div>
-    )
-  }
-
-  if (!client) {
-    return <p className="text-red-400">Client not found</p>
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href={`/clients/${id}`} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <h2 className="text-2xl font-bold text-[var(--text-primary)]">Edit {client.fullName}</h2>
-      </div>
-      <div className="rounded-lg p-6" style={{ backgroundColor: "#1A1A2E" }}>
-        <ClientForm initialData={client} onSubmit={handleSubmit} isEditing />
-      </div>
-    </div>
-  )
+  return <EditClientPage clientId={id} />
 }
