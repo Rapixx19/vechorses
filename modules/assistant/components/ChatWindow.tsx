@@ -1,27 +1,37 @@
 /**
  * FILE: modules/assistant/components/ChatWindow.tsx
  * ZONE: Green
- * PURPOSE: Main chat window with messages, input, and voice support
+ * PURPOSE: Main chat window with messages, input, voice, and multilingual support
  * EXPORTS: ChatWindow
  * DEPENDS ON: lucide-react, MessageBubble
  * CONSUMED BY: AssistantPage
  * TESTS: modules/assistant/tests/ChatWindow.test.tsx
- * LAST CHANGED: 2026-03-08 — Initial creation
+ * LAST CHANGED: 2026-03-08 — Added multilingual voice recognition and language selector
  */
 
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Send, Mic, Loader2, Trash2, Calendar, UserPlus, FileText, CheckSquare, Bot } from "lucide-react"
+import { Send, Mic, Loader2, Trash2, Calendar, UserPlus, FileText, CheckSquare, Bot, Globe, ChevronDown } from "lucide-react"
 import { MessageBubble } from "./MessageBubble"
 import type { AIMessage } from "../hooks/useAssistantChat"
+
+// Supported languages with their speech recognition codes
+const LANGUAGES = [
+  { code: "en", label: "English", speechCode: "en-US", flag: "EN" },
+  { code: "it", label: "Italiano", speechCode: "it-IT", flag: "IT" },
+  { code: "de", label: "Deutsch", speechCode: "de-DE", flag: "DE" },
+  { code: "es", label: "Espanol", speechCode: "es-ES", flag: "ES" },
+] as const
 
 interface ChatWindowProps {
   messages: AIMessage[]
   isSending: boolean
+  userLanguage: string
   onSendMessage: (content: string) => void
   onFeedback: (messageId: string, wasHelpful: boolean, correction?: string) => void
   onClear: () => void
+  onLanguageChange: (lang: string) => void
 }
 
 // BREADCRUMB: Quick action cards for empty state
@@ -55,14 +65,32 @@ const quickActions = [
 export function ChatWindow({
   messages,
   isSending,
+  userLanguage,
   onSendMessage,
   onFeedback,
   onClear,
+  onLanguageChange,
 }: ChatWindowProps) {
   const [input, setInput] = useState("")
   const [isListening, setIsListening] = useState(false)
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const languageMenuRef = useRef<HTMLDivElement>(null)
+
+  // Get current language config
+  const currentLanguage = LANGUAGES.find(l => l.code === userLanguage) || LANGUAGES[0]
+
+  // Close language menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+        setShowLanguageMenu(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   // BREADCRUMB: Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -85,7 +113,7 @@ export function ChatWindow({
     onSendMessage(suggestion)
   }
 
-  // BREADCRUMB: Web Speech API for voice input
+  // BREADCRUMB: Web Speech API for multilingual voice input
   const startVoiceInput = () => {
     if (!("webkitSpeechRecognition" in window)) {
       alert("Voice input is not supported in this browser")
@@ -96,7 +124,8 @@ export function ChatWindow({
     const recognition = new SpeechRecognition()
     recognition.continuous = false
     recognition.interimResults = false
-    recognition.lang = "en-US"
+    // Use the selected language for speech recognition
+    recognition.lang = currentLanguage.speechCode
 
     recognition.onstart = () => {
       setIsListening(true)
@@ -123,6 +152,11 @@ export function ChatWindow({
     recognition.start()
   }
 
+  const handleLanguageSelect = (langCode: string) => {
+    onLanguageChange(langCode)
+    setShowLanguageMenu(false)
+  }
+
   const isEmpty = messages.length === 0
 
   return (
@@ -138,15 +172,48 @@ export function ChatWindow({
             <p className="text-xs text-[var(--text-muted)]">Ask me anything about your stable</p>
           </div>
         </div>
-        {!isEmpty && (
-          <button
-            onClick={onClear}
-            className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors"
-            title="Clear chat"
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Language selector */}
+          <div className="relative" ref={languageMenuRef}>
+            <button
+              onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors"
+              title="Change language"
+            >
+              <Globe className="h-4 w-4" />
+              <span className="font-medium">{currentLanguage.flag}</span>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+            {showLanguageMenu && (
+              <div className="absolute right-0 top-full mt-1 py-1 w-36 rounded-lg bg-[#252538] border border-[var(--border)] shadow-lg z-10">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => handleLanguageSelect(lang.code)}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-[var(--bg-elevated)] transition-colors flex items-center justify-between ${
+                      lang.code === userLanguage
+                        ? "text-[#2C5F2E] bg-[#2C5F2E]/10"
+                        : "text-[var(--text-primary)]"
+                    }`}
+                  >
+                    <span>{lang.label}</span>
+                    <span className="text-xs text-[var(--text-muted)]">{lang.flag}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Clear chat button */}
+          {!isEmpty && (
+            <button
+              onClick={onClear}
+              className="p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors"
+              title="Clear chat"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages area */}
@@ -187,6 +254,7 @@ export function ChatWindow({
                 content={msg.content}
                 actionType={msg.actionType}
                 actionData={msg.actionData}
+                displayData={msg.displayData}
                 suggestions={msg.suggestions}
                 wasHelpful={msg.wasHelpful}
                 onFeedback={onFeedback}

@@ -27,10 +27,12 @@ export function AssistantPage() {
     currentConversationId,
     isLoading,
     isSending,
+    userLanguage,
     sendMessage,
     startNewConversation,
     loadConversation,
     submitFeedback,
+    setUserLanguage,
   } = useAssistantChat()
 
   const handleSelectConversation = (id: string) => {
@@ -75,9 +77,11 @@ export function AssistantPage() {
           <ChatWindow
             messages={messages}
             isSending={isSending}
+            userLanguage={userLanguage}
             onSendMessage={sendMessage}
             onFeedback={submitFeedback}
             onClear={startNewConversation}
+            onLanguageChange={setUserLanguage}
           />
         </div>
 
@@ -129,9 +133,11 @@ export function AssistantPage() {
         <ChatWindow
           messages={messages}
           isSending={isSending}
+          userLanguage={userLanguage}
           onSendMessage={sendMessage}
           onFeedback={submitFeedback}
           onClear={startNewConversation}
+          onLanguageChange={setUserLanguage}
         />
       </div>
     </div>

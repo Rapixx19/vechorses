@@ -3,18 +3,23 @@
  * ZONE: Green
  * PURPOSE: Chat message bubble for user and assistant messages
  * EXPORTS: MessageBubble
- * DEPENDS ON: lucide-react, ActionCard, SuggestionChips
+ * DEPENDS ON: lucide-react, ActionCard, DisplayCard, SuggestionChips
  * CONSUMED BY: ChatWindow
  * TESTS: modules/assistant/tests/MessageBubble.test.tsx
- * LAST CHANGED: 2026-03-08 — Initial creation
+ * LAST CHANGED: 2026-03-08 — Added DisplayCard support for rich data display
  */
 
 "use client"
 
 import { useState } from "react"
 import { ThumbsUp, ThumbsDown, Bot, User } from "lucide-react"
-import { ActionCard } from "./ActionCard"
+import { ActionCard, DisplayCard } from "./ActionCard"
 import { SuggestionChips } from "./SuggestionChips"
+
+interface DisplayData {
+  type: "client_info" | "horse_info" | "documents" | "invoices" | "tasks" | "memories" | "balance" | "events" | "staff"
+  data: unknown
+}
 
 interface MessageBubbleProps {
   id: string
@@ -22,6 +27,7 @@ interface MessageBubbleProps {
   content: string
   actionType?: string
   actionData?: Record<string, unknown>
+  displayData?: DisplayData
   suggestions?: string[]
   wasHelpful?: boolean
   onFeedback?: (messageId: string, wasHelpful: boolean, correction?: string) => void
@@ -34,6 +40,7 @@ export function MessageBubble({
   content,
   actionType,
   actionData,
+  displayData,
   suggestions,
   wasHelpful,
   onFeedback,
@@ -83,6 +90,9 @@ export function MessageBubble({
 
           {/* Action card if action was taken */}
           {actionType && actionData && <ActionCard type={actionType} data={actionData} />}
+
+          {/* Display card for rich data display */}
+          {displayData && <DisplayCard type={displayData.type} data={displayData.data} />}
 
           {/* Suggestion chips */}
           {suggestions && suggestions.length > 0 && (
