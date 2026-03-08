@@ -3,10 +3,10 @@
  * ZONE: 🔴 Red
  * PURPOSE: Invoice creation dialog with live preview and Supabase integration
  * EXPORTS: InvoiceBuilder
- * DEPENDS ON: lib/types.ts, InvoicePreview, InvoiceLineItemRow, generatePdf, useCreateInvoice, useClients, lucide-react
+ * DEPENDS ON: lib/types.ts, InvoicePreview, ServiceComboInput, generatePdf, useCreateInvoice, useClients, useServices, lucide-react
  * CONSUMED BY: ClientBillingCard, app/billing/page.tsx
  * TESTS: modules/billing/tests/InvoiceBuilder.test.tsx
- * LAST CHANGED: 2026-03-07 — Added recipient toggle for existing clients vs custom recipients
+ * LAST CHANGED: 2026-03-08 — Redesigned line items with service combo input, quick-add buttons, mobile layout
  */
 
 // 🔴 RED ZONE — billing invoice builder, handle with care
@@ -14,13 +14,25 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { X, Plus, Eye, Download, Send, Save, User, Building2 } from "lucide-react"
+import { X, Plus, Eye, Download, Send, Save, User, Building2, Trash2 } from "lucide-react"
 import { InvoicePreview } from "./InvoicePreview"
-import { InvoiceLineItemRow } from "./InvoiceLineItemRow"
+import { ServiceComboInput } from "./ServiceComboInput"
 import { generateInvoicePdf } from "../services/generatePdf"
 import { useCreateInvoice } from "../hooks/useInvoices"
 import { useClients } from "@/modules/clients"
-import type { Client, BillingLineItem, StableSettings, Invoice, InvoiceStatus, RecipientType, RecipientInfo } from "@/lib/types"
+import { useServices } from "@/modules/services"
+import type { Client, BillingLineItem, StableSettings, Invoice, InvoiceStatus, RecipientType, RecipientInfo, Service } from "@/lib/types"
+
+// New line item interface with service support
+interface InvoiceLineItem {
+  id: string
+  description: string
+  serviceId: string | null
+  quantity: number
+  unitPrice: number
+  taxRate: number
+  total: number
+}
 
 interface InvoiceBuilderProps {
   clientId?: string | null
@@ -31,9 +43,25 @@ interface InvoiceBuilderProps {
   onSave: (invoice: Invoice) => void
 }
 
+// Helper to convert InvoiceLineItem to BillingLineItem for invoice
+function lineItemToBillingItem(item: InvoiceLineItem, clientId: string | null, currency: string, issueDate: string): BillingLineItem {
+  return {
+    id: item.id,
+    clientId: clientId || "",
+    serviceType: "other",
+    description: item.description,
+    amountCents: item.total,
+    currency,
+    status: "pending",
+    serviceDate: issueDate,
+    createdAt: new Date().toISOString(),
+  }
+}
+
 export function InvoiceBuilder({ clientId: initialClientId, client: initialClient, lineItems, settings, onClose, onSave }: InvoiceBuilderProps) {
   const { createInvoice } = useCreateInvoice()
   const { clients } = useClients()
+  const { services } = useServices()
 
   // Recipient state
   const [recipientType, setRecipientType] = useState<RecipientType>(initialClient ? "client" : "custom")
@@ -59,19 +87,33 @@ export function InvoiceBuilder({ clientId: initialClientId, client: initialClien
   const [invoiceNumber, setInvoiceNumber] = useState(`${settings.invoicePrefix}-${settings.invoiceStartNumber}`)
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split("T")[0])
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
-  const [taxRate, setTaxRate] = useState(0)
   const [notes, setNotes] = useState("")
-  const [items, setItems] = useState<(BillingLineItem & { included: boolean; isCustom?: boolean })[]>(
-    lineItems.map((item) => ({ ...item, included: true }))
+
+  // Convert existing BillingLineItems to new InvoiceLineItem format
+  const [items, setItems] = useState<InvoiceLineItem[]>(
+    lineItems.map((item) => ({
+      id: item.id,
+      description: item.description,
+      serviceId: null,
+      quantity: 1,
+      unitPrice: item.amountCents,
+      taxRate: 0,
+      total: item.amountCents,
+    }))
   )
   const [showPreview, setShowPreview] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const includedItems = items.filter((i) => i.included)
-  const subtotal = includedItems.reduce((sum, i) => sum + i.amountCents, 0)
-  const tax = taxRate > 0 ? Math.round(subtotal * (taxRate / 100)) : 0
-  const total = subtotal + tax
+  // Calculate totals from line items
+  const subtotal = items.reduce((sum, i) => sum + i.total, 0)
+  const totalTax = items.reduce((sum, i) => Math.round(i.total * (i.taxRate / 100)), 0)
+  const total = subtotal + totalTax
+
+  // Get average tax rate for display
+  const avgTaxRate = items.length > 0
+    ? items.reduce((sum, i) => sum + i.taxRate, 0) / items.length
+    : 0
 
   // Get effective recipient info for preview
   const effectiveRecipientInfo: RecipientInfo | undefined = useMemo(() => {
@@ -84,32 +126,80 @@ export function InvoiceBuilder({ clientId: initialClientId, client: initialClien
     return customRecipient.fullName ? customRecipient : undefined
   }, [recipientType, selectedClient, customRecipient])
 
+  // Convert InvoiceLineItems to BillingLineItems for the invoice
+  const billingItems = useMemo(() =>
+    items.map((item) => lineItemToBillingItem(item, selectedClientId, settings.currency, issueDate)),
+    [items, selectedClientId, settings.currency, issueDate]
+  )
+
   const invoice: Invoice = useMemo(() => ({
     id: `inv-${Date.now()}`,
     invoiceNumber,
     clientId: recipientType === "client" ? selectedClientId : null,
     recipientType,
     recipientInfo: effectiveRecipientInfo,
-    lineItems: includedItems,
+    lineItems: billingItems,
     subtotal,
-    tax: tax || undefined,
-    taxRate: taxRate || undefined,
+    tax: totalTax || undefined,
+    taxRate: avgTaxRate || undefined,
     total,
     status: "draft",
     issuedDate: issueDate,
     dueDate,
     notes: notes || undefined,
     createdAt: new Date().toISOString(),
-  }), [invoiceNumber, selectedClientId, recipientType, effectiveRecipientInfo, includedItems, subtotal, tax, taxRate, total, issueDate, dueDate, notes])
+  }), [invoiceNumber, selectedClientId, recipientType, effectiveRecipientInfo, billingItems, subtotal, totalTax, avgTaxRate, total, issueDate, dueDate, notes])
 
-  const formatAmount = (cents: number) => `€${(cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
+  const formatAmount = (cents: number) => `${settings.currency} ${(cents / 100).toLocaleString("de-DE", { minimumFractionDigits: 2 })}`
   const inputClass = "w-full px-3 py-2 rounded bg-[#252538] border border-[var(--border)] text-sm text-[var(--text-primary)]"
   const labelClass = "block text-xs font-medium text-[var(--text-muted)] mb-1"
 
-  const handleToggle = (idx: number) => setItems((prev) => prev.map((item, i) => (i === idx ? { ...item, included: !item.included } : item)))
-  const handleUpdate = (idx: number, updates: Partial<BillingLineItem>) => setItems((prev) => prev.map((item, i) => (i === idx ? { ...item, ...updates } : item)))
-  const handleRemove = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx))
-  const handleAddItem = () => setItems((prev) => [...prev, { id: `custom-${Date.now()}`, clientId: selectedClientId || "", serviceType: "other", description: "", amountCents: 0, currency: "EUR", status: "pending", serviceDate: issueDate, createdAt: new Date().toISOString(), included: true, isCustom: true }])
+  // Line item handlers
+  const updateLineItem = (id: string, updates: Partial<InvoiceLineItem>) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item
+        const updated = { ...item, ...updates }
+        // Recalculate total if price or quantity changed
+        if (updates.unitPrice !== undefined || updates.quantity !== undefined) {
+          updated.total = updated.unitPrice * updated.quantity
+        }
+        return updated
+      })
+    )
+  }
+
+  const removeLineItem = (id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  const handleAddItem = () => {
+    setItems((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        description: "",
+        serviceId: null,
+        quantity: 1,
+        unitPrice: 0,
+        taxRate: 0,
+        total: 0,
+      },
+    ])
+  }
+
+  const addLineItemFromService = (service: Service) => {
+    const newItem: InvoiceLineItem = {
+      id: crypto.randomUUID(),
+      description: service.name,
+      serviceId: service.id,
+      quantity: 1,
+      unitPrice: service.price,
+      taxRate: 0,
+      total: service.price,
+    }
+    setItems((prev) => [...prev, newItem])
+  }
 
   const handleSaveInvoice = async (status: InvoiceStatus) => {
     // Validate recipient
@@ -129,9 +219,9 @@ export function InvoiceBuilder({ clientId: initialClientId, client: initialClien
       clientId: recipientType === "client" ? selectedClientId : null,
       recipientType,
       recipientInfo: recipientType === "custom" ? customRecipient : undefined,
-      lineItems: includedItems,
+      lineItems: billingItems,
       invoiceNumber,
-      taxRate: taxRate || undefined,
+      taxRate: avgTaxRate || undefined,
       notes: notes || undefined,
       issuedDate: issueDate,
       dueDate,
@@ -273,22 +363,261 @@ export function InvoiceBuilder({ clientId: initialClientId, client: initialClien
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className={labelClass}>Invoice Number</label><input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className={inputClass} /></div>
-              <div><label className={labelClass}>Tax Rate %</label><input type="number" min="0" max="100" value={taxRate} onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)} className={inputClass} /></div>
+            <div>
+              <label className={labelClass}>Invoice Number</label>
+              <input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className={inputClass} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><label className={labelClass}>Issue Date</label><input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} className={inputClass} /></div>
               <div><label className={labelClass}>Due Date</label><input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputClass} /></div>
             </div>
-            <div><label className={labelClass}>Line Items</label>
-              <div className="space-y-2">{items.map((item, idx) => <InvoiceLineItemRow key={item.id} item={item} included={item.included} onToggle={() => handleToggle(idx)} onUpdate={(u) => handleUpdate(idx, u)} onRemove={() => handleRemove(idx)} isCustom={item.isCustom} />)}</div>
-              <button onClick={handleAddItem} className="mt-2 flex items-center gap-1 text-sm text-[#2C5F2E] hover:text-green-400"><Plus className="h-4 w-4" />Add Line Item</button>
+            {/* Line Items Section */}
+            <div>
+              <label className={labelClass}>Line Items</label>
+
+              {/* Column Headers - Desktop */}
+              <div className="hidden md:flex items-center gap-2 px-1 mb-2">
+                <div className="flex-1 text-xs text-[var(--text-muted)] uppercase tracking-wider">
+                  Description / Service
+                </div>
+                <div className="w-16 text-xs text-[var(--text-muted)] uppercase tracking-wider text-center">
+                  Qty
+                </div>
+                <div className="w-28 text-xs text-[var(--text-muted)] uppercase tracking-wider text-center">
+                  Price
+                </div>
+                <div className="w-20 text-xs text-[var(--text-muted)] uppercase tracking-wider text-center">
+                  Tax
+                </div>
+                <div className="w-24 text-xs text-[var(--text-muted)] uppercase tracking-wider text-right">
+                  Total
+                </div>
+                <div className="w-8" />
+              </div>
+
+              {/* Line Items List */}
+              <div className="space-y-2">
+                {items.map((item) => (
+                  <div key={item.id}>
+                    {/* Desktop Layout */}
+                    <div className="hidden md:flex items-center gap-2 p-2 rounded bg-[#1A1A2E]">
+                      {/* Service selector */}
+                      <ServiceComboInput
+                        value={item.description}
+                        services={services}
+                        currency={settings.currency}
+                        onSelect={(service) => {
+                          updateLineItem(item.id, {
+                            description: service.name,
+                            serviceId: service.id,
+                            unitPrice: service.price,
+                            taxRate: 0,
+                            total: service.price * item.quantity,
+                          })
+                        }}
+                        onChange={(desc) => {
+                          updateLineItem(item.id, {
+                            description: desc,
+                            serviceId: null,
+                          })
+                        }}
+                      />
+
+                      {/* Quantity */}
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const qty = parseFloat(e.target.value) || 1
+                          updateLineItem(item.id, {
+                            quantity: qty,
+                            total: item.unitPrice * qty,
+                          })
+                        }}
+                        className="w-16 bg-[#252538] border border-[var(--border)] rounded-lg px-2 py-2 text-[var(--text-primary)] text-sm text-center focus:border-[#2C5F2E] focus:outline-none"
+                        placeholder="1"
+                      />
+
+                      {/* Unit price */}
+                      <div className="relative w-28">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs">
+                          {settings.currency}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={(item.unitPrice / 100).toFixed(2)}
+                          onChange={(e) => {
+                            const price = Math.round(parseFloat(e.target.value) * 100) || 0
+                            updateLineItem(item.id, {
+                              unitPrice: price,
+                              total: price * item.quantity,
+                            })
+                          }}
+                          className="w-full bg-[#252538] border border-[var(--border)] rounded-lg pl-8 pr-2 py-2 text-[var(--text-primary)] text-sm text-right focus:border-[#2C5F2E] focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Tax rate */}
+                      <div className="relative w-20">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={item.taxRate}
+                          onChange={(e) => {
+                            updateLineItem(item.id, {
+                              taxRate: parseFloat(e.target.value) || 0,
+                            })
+                          }}
+                          className="w-full bg-[#252538] border border-[var(--border)] rounded-lg px-2 py-2 text-[var(--text-primary)] text-sm text-center focus:border-[#2C5F2E] focus:outline-none"
+                          placeholder="0"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs">
+                          %
+                        </span>
+                      </div>
+
+                      {/* Line total (calculated) */}
+                      <div className="w-24 text-right text-[var(--text-primary)] text-sm font-medium">
+                        {formatAmount(item.total)}
+                      </div>
+
+                      {/* Delete button */}
+                      <button
+                        type="button"
+                        onClick={() => removeLineItem(item.id)}
+                        className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1 rounded"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Mobile Layout */}
+                    <div className="md:hidden p-3 rounded bg-[#1A1A2E] space-y-3">
+                      <ServiceComboInput
+                        value={item.description}
+                        services={services}
+                        currency={settings.currency}
+                        onSelect={(service) => {
+                          updateLineItem(item.id, {
+                            description: service.name,
+                            serviceId: service.id,
+                            unitPrice: service.price,
+                            taxRate: 0,
+                            total: service.price * item.quantity,
+                          })
+                        }}
+                        onChange={(desc) => {
+                          updateLineItem(item.id, {
+                            description: desc,
+                            serviceId: null,
+                          })
+                        }}
+                      />
+
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <label className="text-xs text-[var(--text-muted)]">Qty</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const qty = parseFloat(e.target.value) || 1
+                              updateLineItem(item.id, {
+                                quantity: qty,
+                                total: item.unitPrice * qty,
+                              })
+                            }}
+                            className="w-full bg-[#252538] border border-[var(--border)] rounded-lg px-2 py-2 text-[var(--text-primary)] text-sm text-center focus:border-[#2C5F2E] focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex-1">
+                          <label className="text-xs text-[var(--text-muted)]">Price</label>
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-xs">
+                              {settings.currency}
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={(item.unitPrice / 100).toFixed(2)}
+                              onChange={(e) => {
+                                const price = Math.round(parseFloat(e.target.value) * 100) || 0
+                                updateLineItem(item.id, {
+                                  unitPrice: price,
+                                  total: price * item.quantity,
+                                })
+                              }}
+                              className="w-full bg-[#252538] border border-[var(--border)] rounded-lg pl-8 pr-2 py-2 text-[var(--text-primary)] text-sm text-right focus:border-[#2C5F2E] focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="w-16">
+                          <label className="text-xs text-[var(--text-muted)]">Tax %</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={item.taxRate}
+                            onChange={(e) => {
+                              updateLineItem(item.id, {
+                                taxRate: parseFloat(e.target.value) || 0,
+                              })
+                            }}
+                            className="w-full bg-[#252538] border border-[var(--border)] rounded-lg px-2 py-2 text-[var(--text-primary)] text-sm text-center focus:border-[#2C5F2E] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-[var(--text-primary)]">
+                          Total: {formatAmount(item.total)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeLineItem(item.id)}
+                          className="text-[var(--text-muted)] hover:text-red-400 transition-colors p-1 rounded"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quick Add Buttons */}
+              {services.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 mt-3 mb-3">
+                  <span className="text-xs text-[var(--text-muted)]">Quick add:</span>
+                  {services.slice(0, 4).map((service) => (
+                    <button
+                      key={service.id}
+                      type="button"
+                      onClick={() => addLineItemFromService(service)}
+                      className="text-xs bg-[#252538] hover:bg-[#303050] border border-[var(--border)] hover:border-[#2C5F2E] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-3 py-1.5 rounded-full transition-colors"
+                    >
+                      {service.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button onClick={handleAddItem} className="mt-2 flex items-center gap-1 text-sm text-[#2C5F2E] hover:text-green-400">
+                <Plus className="h-4 w-4" />Add Line Item
+              </button>
             </div>
             <div><label className={labelClass}>Notes</label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputClass} placeholder="Additional notes..." /></div>
             <div className="p-4 rounded bg-[#1A1A2E]">
               <div className="flex justify-between text-sm mb-1"><span className="text-[var(--text-muted)]">Subtotal</span><span>{formatAmount(subtotal)}</span></div>
-              {taxRate > 0 && <div className="flex justify-between text-sm mb-1"><span className="text-[var(--text-muted)]">Tax ({taxRate}%)</span><span>{formatAmount(tax)}</span></div>}
+              {totalTax > 0 && <div className="flex justify-between text-sm mb-1"><span className="text-[var(--text-muted)]">Tax</span><span>{formatAmount(totalTax)}</span></div>}
               <div className="flex justify-between text-lg font-bold pt-2 border-t border-[var(--border)]"><span>Total</span><span>{formatAmount(total)}</span></div>
             </div>
           </div>
