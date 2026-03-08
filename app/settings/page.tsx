@@ -1,12 +1,12 @@
 /**
  * FILE: app/settings/page.tsx
  * ZONE: 🔴 Red
- * PURPOSE: Settings page with stable info, billing settings, invoice history, and team management
+ * PURPOSE: Settings page with stable info, billing settings, invoice history, team, and WhatsApp
  * EXPORTS: default (SettingsPage)
  * DEPENDS ON: modules/billing, modules/clients, modules/settings
  * CONSUMED BY: Next.js routing
  * TESTS: app/settings/page.test.tsx
- * LAST CHANGED: 2026-03-07 — V2: Updated useInvoices hook for Supabase integration
+ * LAST CHANGED: 2026-03-08 — Added WhatsApp integration settings tab
  */
 
 // 🔴 RED ZONE — billing settings, handle with care
@@ -14,7 +14,7 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, Receipt, FileText, Users, X } from "lucide-react"
+import { Building2, Receipt, FileText, Users, X, MessageCircle } from "lucide-react"
 import {
   useSettings,
   useUpdateSettings,
@@ -26,10 +26,10 @@ import {
   generateInvoicePdf,
 } from "@/modules/billing"
 import { useClients } from "@/modules/clients"
-import { TeamManager } from "@/modules/settings"
+import { TeamManager, WhatsAppSettings } from "@/modules/settings"
 import type { Invoice, StableSettings } from "@/lib/types"
 
-type SettingsTab = "stable" | "billing" | "history" | "team"
+type SettingsTab = "stable" | "billing" | "history" | "team" | "whatsapp"
 
 export default function SettingsPage() {
   // All hooks must be called before any conditional returns
@@ -67,6 +67,7 @@ export default function SettingsPage() {
     { id: "billing" as const, label: "Billing & Invoices", icon: Receipt },
     { id: "history" as const, label: "Invoice History", icon: FileText },
     { id: "team" as const, label: "Team", icon: Users },
+    { id: "whatsapp" as const, label: "WhatsApp", icon: MessageCircle },
   ]
 
   return (
@@ -104,6 +105,7 @@ export default function SettingsPage() {
           />
         )}
         {activeTab === "team" && <TeamManager />}
+        {activeTab === "whatsapp" && <WhatsAppSettings />}
       </div>
 
       {/* Invoice Preview Modal */}
