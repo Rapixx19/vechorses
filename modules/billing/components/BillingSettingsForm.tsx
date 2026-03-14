@@ -17,7 +17,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Zap, Calendar, Mail, Loader2, Check } from "lucide-react"
+import { Zap, Calendar, Mail, Loader2, Check, Send } from "lucide-react"
 import type { StableSettings, Service, Client } from "@/lib/types"
 
 const schema = z.object({
@@ -30,6 +30,10 @@ const schema = z.object({
   bankBic: z.string().optional(),
   invoiceNotes: z.string().optional(),
   invoiceFooter: z.string().optional(),
+  // Invoice personalization
+  invoiceAccentColor: z.string().optional(),
+  invoiceFooterNote: z.string().optional(),
+  paymentTermsDays: z.number().min(1).max(365).optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -64,6 +68,9 @@ export function BillingSettingsForm({ settings, onSave, services = [] }: Billing
       bankBic: settings.bankBic || "",
       invoiceNotes: settings.invoiceNotes || "",
       invoiceFooter: settings.invoiceFooter || "",
+      invoiceAccentColor: settings.invoiceAccentColor || "#2C5F2E",
+      invoiceFooterNote: settings.invoiceFooterNote || "",
+      paymentTermsDays: settings.paymentTermsDays || 30,
     },
   })
 
@@ -79,6 +86,9 @@ export function BillingSettingsForm({ settings, onSave, services = [] }: Billing
       bankBic: settings.bankBic || "",
       invoiceNotes: settings.invoiceNotes || "",
       invoiceFooter: settings.invoiceFooter || "",
+      invoiceAccentColor: settings.invoiceAccentColor || "#2C5F2E",
+      invoiceFooterNote: settings.invoiceFooterNote || "",
+      paymentTermsDays: settings.paymentTermsDays || 30,
     })
     setAutoEnabled(settings.autoInvoiceEnabled || false)
     setAutoDay(settings.autoInvoiceDay || 1)
@@ -368,6 +378,49 @@ export function BillingSettingsForm({ settings, onSave, services = [] }: Billing
         </div>
       </div>
 
+      {/* Invoice Personalization */}
+      <div className="pt-4 border-t border-[var(--border)]">
+        <h4 className="text-sm font-medium text-[var(--text-primary)] mb-4">Invoice Personalization</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Accent Color (for invoice branding)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                {...register("invoiceAccentColor")}
+                className="w-10 h-10 rounded cursor-pointer border border-[var(--border)]"
+              />
+              <input
+                type="text"
+                {...register("invoiceAccentColor")}
+                className={inputClass}
+                placeholder="#2C5F2E"
+              />
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Payment Terms (days)</label>
+            <input
+              type="number"
+              min="1"
+              max="365"
+              {...register("paymentTermsDays", { valueAsNumber: true })}
+              className={inputClass}
+              placeholder="30"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className={labelClass}>Custom Footer Message</label>
+          <input
+            type="text"
+            {...register("invoiceFooterNote")}
+            className={inputClass}
+            placeholder="Thank you for your business!"
+          />
+        </div>
+      </div>
+
       {/* Invoice Text */}
       <div className="pt-4 border-t border-[var(--border)]">
         <h4 className="text-sm font-medium text-[var(--text-primary)] mb-4">Invoice Text</h4>
@@ -390,6 +443,59 @@ export function BillingSettingsForm({ settings, onSave, services = [] }: Billing
               placeholder="e.g. Thank you for your trust in our stable"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Test Email Section */}
+      <div className="pt-4 border-t border-[var(--border)]">
+        <h4 className="text-sm font-medium text-[var(--text-primary)] mb-4">Test Email</h4>
+        <div className="p-4 rounded-lg bg-[#252538] border border-[var(--border)]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Send className="h-5 w-5 text-[#2C5F2E]" />
+              <div>
+                <p className="text-sm font-medium text-[var(--text-primary)]">Send Test Invoice</p>
+                <p className="text-xs text-gray-400">Test your invoice email settings</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                setIsSaving(true)
+                setSaveError(null)
+                try {
+                  const res = await fetch("/api/send-invoice", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      invoiceId: "test-invoice",
+                      stableId: "test-stable",
+                      testMode: true,
+                    }),
+                  })
+                  const data = await res.json()
+                  if (data.success) {
+                    setSaveSuccess(true)
+                    setTimeout(() => setSaveSuccess(false), 3000)
+                  } else {
+                    setSaveError(data.error || "Failed to send test email")
+                  }
+                } catch (err) {
+                  setSaveError(err instanceof Error ? err.message : "Failed to send")
+                } finally {
+                  setIsSaving(false)
+                }
+              }}
+              disabled={isSaving}
+              className="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+              Send Test
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Sends a sample invoice to ferdinand.straehuber@gmail.com
+          </p>
         </div>
       </div>
 

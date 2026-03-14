@@ -214,6 +214,10 @@ export interface StableSettings {
   currency: string
   invoiceNotes?: string
   invoiceFooter?: string
+  // Invoice personalization
+  invoiceAccentColor?: string // Hex color for invoice branding, default #2C5F2E
+  invoiceFooterNote?: string // Custom footer message like "Thank you for your business!"
+  paymentTermsDays?: number // Payment due in X days, default 30
   // Auto invoice settings
   autoInvoiceEnabled?: boolean
   autoInvoiceDay?: number

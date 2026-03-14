@@ -31,7 +31,10 @@ export { ClientBillingCard } from "./components/ClientBillingCard"
 // Components - Invoice
 export { InvoiceBuilder } from "./components/InvoiceBuilder"
 export { InvoicePreview } from "./components/InvoicePreview"
+export { InvoiceDocument, settingsToStableProp } from "./components/InvoiceDocument"
+export type { InvoiceDocumentProps } from "./components/InvoiceDocument"
 export { InvoiceLineItemRow } from "./components/InvoiceLineItemRow"
+export { SendInvoiceModal } from "./components/SendInvoiceModal"
 
 // Components - Settings
 export { StableInfoForm } from "./components/StableInfoForm"

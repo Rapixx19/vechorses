@@ -65,6 +65,10 @@ interface StableRow {
   invoice_notes: string | null
   invoice_footer: string | null
   created_at: string | null
+  // Invoice personalization fields
+  invoice_accent_color: string | null
+  invoice_footer_note: string | null
+  payment_terms_days: number | null
   // Auto invoice fields
   auto_invoice_enabled: boolean | null
   auto_invoice_day: number | null
@@ -124,6 +128,10 @@ export function useSettings(): StableSettings {
         currency: row.currency || "EUR",
         invoiceNotes: row.invoice_notes || undefined,
         invoiceFooter: row.invoice_footer || undefined,
+        // Invoice personalization
+        invoiceAccentColor: row.invoice_accent_color || "#2C5F2E",
+        invoiceFooterNote: row.invoice_footer_note || undefined,
+        paymentTermsDays: row.payment_terms_days || 30,
         // Auto invoice settings
         autoInvoiceEnabled: row.auto_invoice_enabled || false,
         autoInvoiceDay: row.auto_invoice_day || 1,
@@ -171,6 +179,10 @@ export function useUpdateSettings(): (updates: Partial<StableSettings>) => Promi
       if (updates.currency !== undefined) dbUpdates.currency = updates.currency
       if (updates.invoiceNotes !== undefined) dbUpdates.invoice_notes = updates.invoiceNotes
       if (updates.invoiceFooter !== undefined) dbUpdates.invoice_footer = updates.invoiceFooter
+      // Invoice personalization fields
+      if (updates.invoiceAccentColor !== undefined) dbUpdates.invoice_accent_color = updates.invoiceAccentColor
+      if (updates.invoiceFooterNote !== undefined) dbUpdates.invoice_footer_note = updates.invoiceFooterNote
+      if (updates.paymentTermsDays !== undefined) dbUpdates.payment_terms_days = updates.paymentTermsDays
       // Auto invoice fields
       if (updates.autoInvoiceEnabled !== undefined) dbUpdates.auto_invoice_enabled = updates.autoInvoiceEnabled
       if (updates.autoInvoiceDay !== undefined) dbUpdates.auto_invoice_day = updates.autoInvoiceDay

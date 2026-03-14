@@ -295,3 +295,86 @@ body {
   background-color: rgba(229, 83, 75, 0.1);
   color: var(--red);
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRINT STYLES - For Invoice PDF Generation
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media print {
+  /* Hide everything except the print area */
+  body > *:not(#invoice-print-area) {
+    display: none !important;
+  }
+
+  /* Show the print area */
+  #invoice-print-area {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  /* Reset body for printing */
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force color printing for backgrounds */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* A4 page settings */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  /* Invoice specific print styles */
+  .invoice-document {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm;
+    margin: 0;
+    background: #fff;
+    color: #000;
+    font-size: 12pt;
+  }
+
+  /* Ensure tables print correctly */
+  .invoice-document table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .invoice-document th,
+  .invoice-document td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  /* Hide no-print elements */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Page break control */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+}
