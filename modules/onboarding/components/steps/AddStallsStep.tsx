@@ -53,7 +53,7 @@ export function AddStallsStep({ onNext, onBack, onSkip, stableId }: OnboardingSt
   }
 
   const inputClass =
-    "w-full px-4 py-3 rounded-lg bg-[#252538] border border-gray-700 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#2C5F2E] text-sm"
+    "w-full px-4 py-3 rounded-lg bg-[#252538] border border-[#2a2a3e] text-white placeholder:text-gray-500 focus:outline-none focus:border-[#2C5F2E] text-sm"
 
   // Generate preview grid
   const previewStalls = Array.from({ length: Math.min(stallCount, 12) }, (_, i) => `${prefix} ${i + 1}`)
@@ -72,7 +72,7 @@ export function AddStallsStep({ onNext, onBack, onSkip, stableId }: OnboardingSt
 
       {!isCreated ? (
         <>
-          <div className="bg-[#1A1A2E] rounded-xl p-6 mb-6 border border-gray-800">
+          <div className="bg-[#1A1A2E] rounded-xl p-6 mb-6 border border-[#2a2a3e]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm text-gray-400 mb-2">Number of stalls</label>
@@ -87,7 +87,7 @@ export function AddStallsStep({ onNext, onBack, onSkip, stableId }: OnboardingSt
                     type="number"
                     value={stallCount}
                     onChange={(e) => setStallCount(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-20 text-center px-3 py-2 rounded-lg bg-[#252538] border border-gray-700 text-white text-lg font-semibold"
+                    className="w-20 text-center px-3 py-2 rounded-lg bg-[#252538] border border-[#2a2a3e] text-white text-lg font-semibold"
                     min="1"
                     max="100"
                   />
@@ -124,13 +124,13 @@ export function AddStallsStep({ onNext, onBack, onSkip, stableId }: OnboardingSt
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.02 }}
-                    className="p-3 rounded-lg bg-[#252538] border border-gray-700 text-center"
+                    className="p-3 rounded-lg bg-[#252538] border border-[#2a2a3e] text-center"
                   >
                     <span className="text-sm text-gray-300">{name}</span>
                   </motion.div>
                 ))}
                 {stallCount > 12 && (
-                  <div className="p-3 rounded-lg bg-[#252538] border border-gray-700 text-center">
+                  <div className="p-3 rounded-lg bg-[#252538] border border-[#2a2a3e] text-center">
                     <span className="text-sm text-gray-500">+{stallCount - 12} more</span>
                   </div>
                 )}

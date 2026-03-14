@@ -132,9 +132,9 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-lg bg-[#0F1117] rounded-lg border border-gray-800 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg bg-[#0F1117] rounded-lg border border-[#2a2a3e] shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-[#0F1117] border-b border-gray-800 p-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-[#0F1117] border-b border-[#2a2a3e] p-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">
             {isEditing ? "Edit Event" : "Add Event"}
           </h2>
@@ -158,7 +158,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               required
             />
           </div>
@@ -169,7 +169,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
             <select
               value={category}
               onChange={(e) => handleCategoryChange(e.target.value as EventCategory)}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -184,7 +184,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
               id="allDay"
               checked={allDay}
               onChange={(e) => setAllDay(e.target.checked)}
-              className="rounded bg-[#1A1A2E] border-gray-600"
+              className="rounded bg-[#1A1A2E] border-[#2a2a3e]"
             />
             <label htmlFor="allDay" className="text-sm text-gray-400">All day event</label>
           </div>
@@ -197,7 +197,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               />
             </div>
             {!allDay && (
@@ -207,7 +207,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
                 />
               </div>
             )}
@@ -220,7 +220,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               />
             </div>
             {!allDay && (
@@ -230,7 +230,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
                 />
               </div>
             )}
@@ -243,7 +243,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none resize-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none resize-none"
             />
           </div>
 
@@ -254,7 +254,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
             />
           </div>
 
@@ -264,7 +264,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
             <select
               value={horseId}
               onChange={(e) => setHorseId(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
             >
               <option value="">No horse linked</option>
               {horses.map((h) => (
@@ -316,7 +316,7 @@ export function EventForm({ event, initialDate, horses, staff, onClose, onSucces
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#2a2a3e]">
             <button
               type="button"
               onClick={onClose}

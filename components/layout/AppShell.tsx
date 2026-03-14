@@ -32,6 +32,7 @@ import {
   Menu,
   X,
   MoreHorizontal,
+  BarChart3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/hooks/useAuth"
@@ -50,6 +51,7 @@ const navItems: { href: string; label: string; icon: React.ElementType; module: 
   { href: "/billing", label: "Billing", icon: Receipt, module: "billing" },
   { href: "/services", label: "Services", icon: Tag, module: "services" },
   { href: "/documents", label: "Documents", icon: FileText, module: "documents" },
+  { href: "/analytics", label: "Analytics", icon: BarChart3, module: "dashboard" },
   { href: "/settings", label: "Settings", icon: Settings, module: "settings" },
 ]
 

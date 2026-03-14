@@ -73,7 +73,7 @@ export function MobileStallList({ stalls, horses, onStallClick }: MobileStallLis
               <button
                 key={stall.id}
                 onClick={() => onStallClick(stall)}
-                className="w-full flex items-center gap-3 p-3 rounded-lg bg-[#1A1A2E] border border-gray-600 hover:bg-[#252538] transition-colors"
+                className="w-full flex items-center gap-3 p-3 rounded-lg bg-[#1A1A2E] border border-[#2a2a3e] hover:bg-[#252538] transition-colors"
               >
                 <div className="p-2 rounded-full bg-gray-700">
                   <Home className="h-5 w-5 text-gray-400" />

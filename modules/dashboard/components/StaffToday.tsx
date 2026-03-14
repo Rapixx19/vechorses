@@ -111,7 +111,7 @@ export function StaffToday() {
       )}
 
       {/* Summary */}
-      <div className="mt-3 pt-3 border-t border-gray-700 flex items-center gap-4 text-xs text-gray-500">
+      <div className="mt-3 pt-3 border-t border-[#2a2a3e] flex items-center gap-4 text-xs text-gray-500">
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-green-500" />
           <span>Working</span>

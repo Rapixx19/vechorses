@@ -166,7 +166,7 @@ export function CalendarView({
       {viewMode === "month" && (
         <div className="rounded-lg overflow-hidden" style={{ backgroundColor: "#1A1A2E" }}>
           {/* Day headers */}
-          <div className="grid grid-cols-7 border-b border-gray-700">
+          <div className="grid grid-cols-7 border-b border-[#2a2a3e]">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
               <div key={day} className="p-2 text-center text-xs font-medium text-gray-400">
                 {day}
@@ -187,7 +187,7 @@ export function CalendarView({
                   key={idx}
                   onClick={() => onDayClick(day)}
                   className={`
-                    min-h-[100px] p-1 border-b border-r border-gray-700 cursor-pointer
+                    min-h-[100px] p-1 border-b border-r border-[#2a2a3e] cursor-pointer
                     hover:bg-gray-700/30 transition-colors
                     ${!isCurrentMonth ? "opacity-40" : ""}
                   `}
@@ -226,7 +226,7 @@ export function CalendarView({
       {viewMode === "week" && (
         <div className="rounded-lg overflow-hidden" style={{ backgroundColor: "#1A1A2E" }}>
           {/* Day headers */}
-          <div className="grid grid-cols-8 border-b border-gray-700">
+          <div className="grid grid-cols-8 border-b border-[#2a2a3e]">
             <div className="p-2 text-xs text-gray-500" />
             {weekDays.map((day) => {
               const dateStr = day.toISOString().split("T")[0]
@@ -250,7 +250,7 @@ export function CalendarView({
           {/* Time slots */}
           <div className="max-h-[600px] overflow-y-auto">
             {HOURS.map((hour) => (
-              <div key={hour} className="grid grid-cols-8 border-b border-gray-700/50">
+              <div key={hour} className="grid grid-cols-8 border-b border-[#2a2a3e]/50">
                 <div className="p-1 text-[10px] text-gray-500 text-right pr-2">
                   {hour.toString().padStart(2, "0")}:00
                 </div>
@@ -262,7 +262,7 @@ export function CalendarView({
                   return (
                     <div
                       key={day.toISOString()}
-                      className="min-h-[40px] border-l border-gray-700/50 p-0.5"
+                      className="min-h-[40px] border-l border-[#2a2a3e]/50 p-0.5"
                     >
                       {dayEvents.map((event) => (
                         <div
@@ -293,11 +293,11 @@ export function CalendarView({
                 return eventHour === hour
               })
               return (
-                <div key={hour} className="flex border-b border-gray-700/50">
+                <div key={hour} className="flex border-b border-[#2a2a3e]/50">
                   <div className="w-16 p-2 text-sm text-gray-500 text-right flex-shrink-0">
                     {hour.toString().padStart(2, "0")}:00
                   </div>
-                  <div className="flex-1 min-h-[60px] p-1 border-l border-gray-700">
+                  <div className="flex-1 min-h-[60px] p-1 border-l border-[#2a2a3e]">
                     {hourEvents.map((event) => (
                       <div
                         key={event.id}

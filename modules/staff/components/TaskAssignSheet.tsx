@@ -123,9 +123,9 @@ export function TaskAssignSheet({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-md bg-[#0F1117] rounded-lg border border-gray-800 shadow-xl">
+      <div className="w-full max-w-md bg-[#0F1117] rounded-lg border border-[#2a2a3e] shadow-xl">
         {/* Header */}
-        <div className="border-b border-gray-800 p-4 flex items-center justify-between">
+        <div className="border-b border-[#2a2a3e] p-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white">Assign Task</h2>
             <p className="text-sm text-gray-400">to {memberName}</p>
@@ -171,7 +171,7 @@ export function TaskAssignSheet({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Feed horses in Block A"
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               required
             />
           </div>
@@ -184,7 +184,7 @@ export function TaskAssignSheet({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="Additional details..."
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none resize-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none resize-none"
             />
           </div>
 
@@ -195,7 +195,7 @@ export function TaskAssignSheet({
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               >
                 {PRIORITIES.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
@@ -207,7 +207,7 @@ export function TaskAssignSheet({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as TaskCategory)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -224,7 +224,7 @@ export function TaskAssignSheet({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               />
             </div>
             <div>
@@ -233,7 +233,7 @@ export function TaskAssignSheet({
                 type="time"
                 value={dueTime}
                 onChange={(e) => setDueTime(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               />
             </div>
           </div>
@@ -244,7 +244,7 @@ export function TaskAssignSheet({
             <select
               value={horseId}
               onChange={(e) => setHorseId(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
             >
               <option value="">No horse linked</option>
               {horses.map((h) => (
@@ -254,7 +254,7 @@ export function TaskAssignSheet({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#2a2a3e]">
             <button
               type="button"
               onClick={onClose}

@@ -54,7 +54,7 @@ export function GridCell({
         className={`
           aspect-square rounded border-2 border-dashed transition-all
           ${isEditMode
-            ? "border-gray-700 hover:border-green-600/50 hover:bg-green-900/10 cursor-pointer"
+            ? "border-[#2a2a3e] hover:border-green-600/50 hover:bg-green-900/10 cursor-pointer"
             : "border-transparent cursor-default"
           }
           bg-[#0F1117] flex items-center justify-center
@@ -94,7 +94,7 @@ export function GridCell({
       <div
         onClick={isEditMode ? onCellClick : undefined}
         className={`
-          aspect-square rounded bg-[#1A1A2E]/50 border border-dashed border-gray-700/30
+          aspect-square rounded bg-[#1A1A2E]/50 border border-dashed border-[#2a2a3e]/30
           ${isEditMode ? "cursor-pointer relative group" : ""}
           ${isSelected ? "ring-2 ring-green-500" : ""}
         `}
@@ -154,7 +154,7 @@ export function GridCell({
         aspect-square rounded-lg p-1.5 flex flex-col transition-all cursor-pointer relative group
         ${isOccupied
           ? "bg-green-900/20 border-2 border-green-600"
-          : "bg-[#1A1A2E] border-2 border-gray-600"
+          : "bg-[#1A1A2E] border-2 border-[#2a2a3e]"
         }
         ${isSelected ? "ring-2 ring-green-500" : ""}
         ${isEditMode ? "hover:ring-2 hover:ring-green-500/50" : "hover:border-green-500"}

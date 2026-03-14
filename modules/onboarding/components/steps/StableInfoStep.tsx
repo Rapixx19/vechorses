@@ -112,7 +112,7 @@ export function StableInfoStep({ onNext, onBack, onSkip, stableId }: OnboardingS
   }
 
   const inputClass =
-    "w-full px-4 py-3 rounded-lg bg-[#252538] border border-gray-700 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#2C5F2E] text-sm"
+    "w-full px-4 py-3 rounded-lg bg-[#252538] border border-[#2a2a3e] text-white placeholder:text-gray-500 focus:outline-none focus:border-[#2C5F2E] text-sm"
 
   return (
     <div>
@@ -223,7 +223,7 @@ export function StableInfoStep({ onNext, onBack, onSkip, stableId }: OnboardingS
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="bg-[#252538] rounded-xl p-4 mb-6 border border-gray-700"
+        className="bg-[#252538] rounded-xl p-4 mb-6 border border-[#2a2a3e]"
       >
         <div className="flex items-center gap-2 text-[#2C5F2E] mb-2">
           <Lightbulb className="h-4 w-4" />

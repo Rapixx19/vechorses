@@ -87,7 +87,7 @@ export function InviteTeamStep({ onNext, onBack, onSkip, stableId }: OnboardingS
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-[#1A1A2E] rounded-xl p-6 mb-6 border border-gray-800"
+        className="bg-[#1A1A2E] rounded-xl p-6 mb-6 border border-[#2a2a3e]"
       >
         <p className="text-sm text-gray-400 mb-3 text-center">Your Stable&apos;s Invite Code</p>
 
@@ -128,7 +128,7 @@ export function InviteTeamStep({ onNext, onBack, onSkip, stableId }: OnboardingS
       </motion.div>
 
       {/* Instructions */}
-      <div className="bg-[#252538] rounded-xl p-4 mb-6 border border-gray-700">
+      <div className="bg-[#252538] rounded-xl p-4 mb-6 border border-[#2a2a3e]">
         <h3 className="text-sm font-medium text-white mb-2">How it works</h3>
         <ol className="text-sm text-gray-400 space-y-2">
           <li className="flex items-start gap-2">

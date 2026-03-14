@@ -140,7 +140,7 @@ export function StaffCard({
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute right-0 mt-1 w-44 rounded-xl shadow-xl z-50 py-2 border border-gray-700"
+                className="absolute right-0 mt-1 w-44 rounded-xl shadow-xl z-50 py-2 border border-[#2a2a3e]"
                 style={{ backgroundColor: "#252538" }}
               >
                 <button

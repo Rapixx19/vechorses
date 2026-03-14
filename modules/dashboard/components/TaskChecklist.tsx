@@ -65,7 +65,7 @@ export function TaskChecklist({ tasks: initialTasks, horses }: TaskChecklistProp
             <input
               type="checkbox"
               onChange={() => handleCheck(task.id)}
-              className="h-3 w-3 rounded border-gray-600 bg-transparent"
+              className="h-3 w-3 rounded border-[#2a2a3e] bg-transparent"
             />
             <span className="font-medium text-[var(--text-primary)]">
               {getHorseName(task.horseId)}

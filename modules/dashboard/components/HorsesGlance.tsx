@@ -89,7 +89,7 @@ export function HorsesGlance({ horses, clients, stalls, tasks }: HorsesGlancePro
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: 0.1 * i }}
-                  className="p-3 rounded-lg bg-[#0F1117] border border-gray-800 hover:border-gray-700 transition-colors cursor-pointer relative"
+                  className="p-3 rounded-lg bg-[#0F1117] border border-[#2a2a3e] hover:border-[#3a3a4e] transition-colors cursor-pointer relative"
                 >
                   {/* Overdue indicator */}
                   {overdueCount > 0 && (

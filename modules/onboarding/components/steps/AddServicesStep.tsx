@@ -163,7 +163,7 @@ export function AddServicesStep({ onNext, onBack, onSkip, stableId }: Onboarding
               className={`relative p-4 rounded-xl cursor-pointer transition-all border ${
                 isSelected
                   ? "bg-[#2C5F2E]/20 border-[#2C5F2E]"
-                  : "bg-[#1A1A2E] border-gray-800 hover:border-gray-600"
+                  : "bg-[#1A1A2E] border-[#2a2a3e] hover:border-[#3a3a4e]"
               }`}
             >
               {isSelected && (
@@ -190,7 +190,7 @@ export function AddServicesStep({ onNext, onBack, onSkip, stableId }: Onboarding
                         type="number"
                         value={selected?.price || template.defaultPrice}
                         onChange={(e) => updatePrice(template.id, parseInt(e.target.value) || 0)}
-                        className="w-20 px-2 py-1 rounded bg-[#252538] border border-gray-700 text-white text-sm"
+                        className="w-20 px-2 py-1 rounded bg-[#252538] border border-[#2a2a3e] text-white text-sm"
                       />
                       <span className="text-gray-400 text-sm">/{template.unit}</span>
                     </motion.div>

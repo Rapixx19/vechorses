@@ -155,7 +155,7 @@ export function SendInvoiceModal({ invoice, client, onClose, onSuccess }: SendIn
               type="checkbox"
               checked={sendCopyToSelf}
               onChange={(e) => setSendCopyToSelf(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-green-500 accent-[#2C5F2E]"
+              className="w-4 h-4 rounded border-[#2a2a3e] bg-gray-800 text-green-500 accent-[#2C5F2E]"
             />
             <span className="text-sm text-[var(--text-primary)]">
               Also send copy to me
@@ -170,7 +170,7 @@ export function SendInvoiceModal({ invoice, client, onClose, onSuccess }: SendIn
                 type="checkbox"
                 checked={markAsSent}
                 onChange={(e) => setMarkAsSent(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-green-500 accent-[#2C5F2E]"
+                className="w-4 h-4 rounded border-[#2a2a3e] bg-gray-800 text-green-500 accent-[#2C5F2E]"
               />
               <span className="text-sm text-[var(--text-primary)]">
                 Mark as &quot;Sent&quot; after sending

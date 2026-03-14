@@ -79,7 +79,7 @@ export function CompleteStep({ onNext }: OnboardingStepProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 + index * 0.1 }}
-            className="bg-[#1A1A2E] rounded-xl p-5 border border-gray-800 hover:border-gray-700 transition-colors cursor-pointer group"
+            className="bg-[#1A1A2E] rounded-xl p-5 border border-[#2a2a3e] hover:border-[#3a3a4e] transition-colors cursor-pointer group"
           >
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 mx-auto"

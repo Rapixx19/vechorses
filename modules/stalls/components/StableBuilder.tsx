@@ -99,7 +99,7 @@ export function StableBuilder({
               max={8}
               value={gridCols}
               onChange={(e) => onGridColsChange(Math.max(2, Math.min(8, parseInt(e.target.value) || 4)))}
-              className="w-16 px-2 py-1 rounded bg-[#252538] border border-gray-600 text-white text-sm"
+              className="w-16 px-2 py-1 rounded bg-[#252538] border border-[#2a2a3e] text-white text-sm"
             />
           </div>
           <span className="text-sm text-gray-400">{stalls.length} stalls</span>
@@ -143,7 +143,7 @@ export function StableBuilder({
                 onDragOver={(e) => handleDragOver(e)}
                 onDrop={() => handleDrop(rowIndex, colIndex)}
                 className={`relative aspect-square p-2 rounded-lg border-2 ${
-                  stall.horseId ? "border-green-600 bg-green-900/15" : "border-gray-600 bg-[#1A1A2E]"
+                  stall.horseId ? "border-green-600 bg-green-900/15" : "border-[#2a2a3e] bg-[#1A1A2E]"
                 } ${draggedId === stall.id ? "opacity-50" : ""}`}
               >
                 {/* Drag Handle */}
@@ -184,7 +184,7 @@ export function StableBuilder({
                   <select
                     value={stall.type}
                     onChange={(e) => onUpdateStall(stall.id, { type: e.target.value as StallType })}
-                    className="mt-2 w-full px-1 py-0.5 rounded bg-[#252538] border border-gray-600 text-gray-400 text-[10px]"
+                    className="mt-2 w-full px-1 py-0.5 rounded bg-[#252538] border border-[#2a2a3e] text-gray-400 text-[10px]"
                   >
                     {STALL_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -212,7 +212,7 @@ export function StableBuilder({
               onDragOver={(e) => handleDragOver(e)}
               onDrop={() => handleDrop(rowIndex, colIndex)}
               onClick={() => onAddStall(idx, rowIndex, colIndex)}
-              className="aspect-square rounded-lg border-2 border-dashed border-gray-700 bg-[#0F1117] flex items-center justify-center hover:border-green-600/50 hover:bg-green-900/10 transition-colors"
+              className="aspect-square rounded-lg border-2 border-dashed border-[#2a2a3e] bg-[#0F1117] flex items-center justify-center hover:border-green-600/50 hover:bg-green-900/10 transition-colors"
             >
               <Plus className="h-6 w-6 text-gray-600" />
             </button>

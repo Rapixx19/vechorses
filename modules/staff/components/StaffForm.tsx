@@ -108,9 +108,9 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-lg bg-[#0F1117] rounded-lg border border-gray-800 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg bg-[#0F1117] rounded-lg border border-[#2a2a3e] shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-[#0F1117] border-b border-gray-800 p-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-[#0F1117] border-b border-[#2a2a3e] p-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">
             {isEditing ? "Edit Staff Member" : "Add Staff Member"}
           </h2>
@@ -135,7 +135,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
                 required
               />
             </div>
@@ -145,7 +145,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
                 required
               />
             </div>
@@ -158,7 +158,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
             />
           </div>
 
@@ -169,7 +169,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as UserRole)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               >
                 {ROLES.map((r) => (
                   <option key={r.value} value={r.value}>{r.label}</option>
@@ -181,7 +181,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
               <select
                 value={contractType}
                 onChange={(e) => setContractType(e.target.value as ContractType)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               >
                 {CONTRACT_TYPES.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -197,7 +197,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
             />
           </div>
 
@@ -208,7 +208,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
             />
           </div>
 
@@ -220,7 +220,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
                 type="text"
                 value={emergencyContactName}
                 onChange={(e) => setEmergencyContactName(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               />
             </div>
             <div>
@@ -229,7 +229,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
                 type="tel"
                 value={emergencyContactPhone}
                 onChange={(e) => setEmergencyContactPhone(e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none"
               />
             </div>
           </div>
@@ -241,7 +241,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-gray-600 text-white text-sm focus:border-green-500 focus:outline-none resize-none"
+              className="w-full px-3 py-2 rounded bg-[#1A1A2E] border border-[#2a2a3e] text-white text-sm focus:border-green-500 focus:outline-none resize-none"
             />
           </div>
 
@@ -265,7 +265,7 @@ export function StaffForm({ member, onClose, onSuccess }: StaffFormProps) {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#2a2a3e]">
             <button
               type="button"
               onClick={onClose}

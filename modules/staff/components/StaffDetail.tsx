@@ -118,9 +118,9 @@ export function StaffDetail({ member, onClose, onEdit, onAssignTask, onRefetch }
   }
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full max-w-md bg-[#0F1117] border-l border-gray-800 shadow-xl z-50 overflow-y-auto">
+    <div className="fixed inset-y-0 right-0 w-full max-w-md bg-[#0F1117] border-l border-[#2a2a3e] shadow-xl z-50 overflow-y-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-[#0F1117] border-b border-gray-800 p-4 flex items-center justify-between">
+      <div className="sticky top-0 bg-[#0F1117] border-b border-[#2a2a3e] p-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">Staff Details</h2>
         <button onClick={onClose} className="p-1 hover:bg-gray-800 rounded">
           <X className="h-5 w-5 text-gray-400" />
@@ -128,7 +128,7 @@ export function StaffDetail({ member, onClose, onEdit, onAssignTask, onRefetch }
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-800">
+      <div className="flex border-b border-[#2a2a3e]">
         {(["overview", "tasks", "schedule"] as TabType[]).map((tab) => (
           <button
             key={tab}
@@ -247,7 +247,7 @@ export function StaffDetail({ member, onClose, onEdit, onAssignTask, onRefetch }
                       value={vacationStart}
                       onChange={(e) => setVacationStart(e.target.value)}
                       onBlur={() => handleStatusChange("vacation")}
-                      className="w-full mt-1 px-3 py-2 rounded bg-[#252538] border border-gray-600 text-white text-sm"
+                      className="w-full mt-1 px-3 py-2 rounded bg-[#252538] border border-[#2a2a3e] text-white text-sm"
                     />
                   </div>
                   <div className="flex-1">
@@ -257,7 +257,7 @@ export function StaffDetail({ member, onClose, onEdit, onAssignTask, onRefetch }
                       value={vacationEnd}
                       onChange={(e) => setVacationEnd(e.target.value)}
                       onBlur={() => handleStatusChange("vacation")}
-                      className="w-full mt-1 px-3 py-2 rounded bg-[#252538] border border-gray-600 text-white text-sm"
+                      className="w-full mt-1 px-3 py-2 rounded bg-[#252538] border border-[#2a2a3e] text-white text-sm"
                     />
                   </div>
                 </div>

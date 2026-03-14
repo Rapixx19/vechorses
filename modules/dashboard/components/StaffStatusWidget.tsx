@@ -100,7 +100,7 @@ export function StaffStatusWidget({ staff }: StaffStatusWidgetProps) {
       )}
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-gray-800">
+      <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-[#2a2a3e]">
         {Object.entries(STATUS_COLORS).map(([key, value]) => {
           const count = activeStaff.filter((s) => s.statusDetail === key).length
           if (count === 0) return null

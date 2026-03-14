@@ -37,7 +37,7 @@ const typeBadgeColors: Record<StallType, string> = {
 function getBorderClass(stall: Stall, horse: Horse | null): string {
   if (stall.isMaintenance) return "border-yellow-600"
   if (horse) return "border-green-600"
-  return "border-gray-600"
+  return "border-[#2a2a3e]"
 }
 
 function getBackgroundClass(stall: Stall, horse: Horse | null): string {

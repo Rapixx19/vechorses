@@ -73,7 +73,7 @@ export function AddFirstClientStep({ onNext, onBack, onSkip, stableId }: Onboard
   }
 
   const inputClass =
-    "w-full px-3 py-2 rounded-lg bg-[#252538] border border-gray-700 text-white placeholder:text-gray-500 focus:outline-none focus:border-[#2C5F2E] text-sm"
+    "w-full px-3 py-2 rounded-lg bg-[#252538] border border-[#2a2a3e] text-white placeholder:text-gray-500 focus:outline-none focus:border-[#2C5F2E] text-sm"
 
   return (
     <div>
@@ -93,7 +93,7 @@ export function AddFirstClientStep({ onNext, onBack, onSkip, stableId }: Onboard
             key={index}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#1A1A2E] rounded-xl p-4 border border-gray-800"
+            className="bg-[#1A1A2E] rounded-xl p-4 border border-[#2a2a3e]"
           >
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm text-gray-400">Client {index + 1}</span>
