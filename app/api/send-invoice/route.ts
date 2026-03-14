@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `${stable.stable_name} <invoices@vechorses.com>`,
+        from: "onboarding@resend.dev",
         to: recipients,
         subject: `Invoice ${invoice.invoice_number} from ${stable.stable_name}`,
         html: emailHtml,
