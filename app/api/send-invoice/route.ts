@@ -48,6 +48,82 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
+    // Use mock data for test mode
+    if (testMode) {
+      const mockInvoice: InvoiceData = {
+        id: "test-invoice",
+        invoice_number: "INV-2024-001",
+        issue_date: new Date().toISOString(),
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        subtotal: 45000,
+        tax: 8550,
+        tax_rate: 19,
+        total: 53550,
+        status: "draft",
+        clients: {
+          full_name: "Test Client",
+          email: "ferdinand.straehuber@gmail.com",
+        },
+        billing_line_items: [
+          { description: "Monthly Boarding - Box Stall", amount_cents: 35000, service_date: new Date().toISOString() },
+          { description: "Grooming Service", amount_cents: 5000, service_date: new Date().toISOString() },
+          { description: "Training Session", amount_cents: 5000, service_date: new Date().toISOString() },
+        ],
+      }
+
+      const mockStable: StableData = {
+        stable_name: "VecHorses Demo Stable",
+        address: "123 Horse Lane",
+        city: "Vienna",
+        country: "Austria",
+        email: "demo@vechorses.com",
+        phone: "+43 1 234 5678",
+        vat_number: "ATU12345678",
+        bank_name: "Demo Bank",
+        bank_iban: "AT12 3456 7890 1234 5678",
+        bank_bic: "DEMOAT12",
+        invoice_accent_color: "#2C5F2E",
+        invoice_footer_note: "Thank you for choosing VecHorses!",
+        currency: "EUR",
+      }
+
+      const toEmail = "ferdinand.straehuber@gmail.com"
+      const emailHtml = buildInvoiceEmail(mockInvoice, mockStable)
+      const resendApiKey = process.env.RESEND_API_KEY
+
+      if (!resendApiKey || resendApiKey === "test") {
+        return NextResponse.json({
+          success: true,
+          testMode: true,
+          sentTo: toEmail,
+          message: "Email logged to console (RESEND_API_KEY not configured)",
+        })
+      }
+
+      const resendResponse = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "onboarding@resend.dev",
+          to: [toEmail],
+          subject: `[TEST] Invoice ${mockInvoice.invoice_number} from ${mockStable.stable_name}`,
+          html: emailHtml,
+          reply_to: mockStable.email,
+        }),
+      })
+
+      if (!resendResponse.ok) {
+        const err = await resendResponse.json().catch(() => ({}))
+        console.error("Resend API error:", err)
+        return NextResponse.json({ error: "Failed to send test email", details: err }, { status: 500 })
+      }
+
+      return NextResponse.json({ success: true, testMode: true, sentTo: toEmail })
+    }
+
     const supabaseAdmin = getSupabaseAdmin()
 
     // Fetch invoice with client details
